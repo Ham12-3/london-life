@@ -4,6 +4,7 @@
 // walk (one draw call per species, however many animals).
 import * as THREE from "three/webgpu";
 import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
+import { DRACOLoader } from "three/addons/loaders/DRACOLoader.js";
 import { attribute, positionLocal, positionGeometry, time, sin, cos, abs, vec3, float, uniformArray, instanceIndex } from "three/tsl";
 import { pointInPoly } from "./world.js";
 
@@ -79,7 +80,7 @@ function walkingMaterial(rig, sp, walk) {
 async function loadSpecies(ids) {
   const res = await fetch("assets/animals/animals.json").catch(() => null);
   const index = res && res.ok ? await res.json() : {};
-  const loader = new GLTFLoader();
+  const loader = new GLTFLoader().setDRACOLoader(new DRACOLoader().setDecoderPath("draco/")); // models are Draco-compressed
   const out = new Map();
   await Promise.all(ids.map(async (id) => {
     if (!index[id]) return;

@@ -68,11 +68,11 @@ runs through its `blender-launcher` alias).
 | `tools/landmarks/prepare.mjs` | Real footprints of each landmark from `world.json`, plus straight-skeleton hipped roofs |
 | `tools/landmarks/build.py` | Models the Outer Circle main entrance (lodges, turnstiles, canopy and LONDON ZOO fascia), the 1927 Reptile House, Gorilla Kingdom, Rainforest Life, Land of the Lions (Sasan Gir station, high street, temple), Tiger Territory (mesh canopy on masts), the Mappin Terraces (concrete cast as rock), Guy the Gorilla in bronze, the Lubetkin Penguin Pool, Snowdon Aviary, Casson Pavilion, Clock Tower, Giraffe House, Raven Cage and Blackburn Pavilion on their footprints; and the animal houses: Penguin Beach (rock-edged pool, nesting burrows, glass balustrade, the striped Beach Hut), Butterfly Paradise (a caterpillar-shaped polytunnel), Tiny Giants (the former B.U.G.S.), In with the Monkeys (walk-through mesh on masts), the Attenborough Komodo Dragon House, Giants of the Galápagos (glasshouse), the nine Gir Lion Lodges and the Mappin Pavilion; writes `public/assets/landmarks/*.glb` and `landmarks.json` |
 | `tools/landmarks/signs.py` | Paints the signs, banners, entrance mosaics and Gir Lion Lodge murals the landmarks use (`public/assets/landmarks/textures/`) |
-| `tools/animals/build.py` | 23 species built with Blender's Skin modifier, coats painted into vertex colours; writes `public/assets/animals/*.glb` and `animals.json` (leg joints for the walk cycle) |
+| `tools/animals/build.py` | 23 species built from their anatomy as Blender metaballs (ribcage, belly, shoulder blades, haunches, limb muscles, slim bones to hooves or paws, skull, muzzle, jaw, ears, eyes in sockets, manes, humps, horns, tusks, fleece), smoothed and decimated; coats (giraffe patches, zebra and tiger stripes, countershading, ringed tails, fur-tone variation) painted into vertex colours by body part; writes Draco `public/assets/animals/*.glb` and `animals.json` (leg pivots for the walk cycle) |
 | `tools/furniture/build.py` | Models the street furniture and a 2.5 m railing section in Blender; writes `public/assets/furniture/*.glb` |
 | `tools/furniture/place.py` | Where it all goes: mapped items plus lamps, benches and bins along the paths, railings along every fence (`placements.json`) |
 | `tools/trees/plane_leaf.py` | Paints the London plane leaf sprig for the plane trees (which also use Poly Haven's scanned plane bark) |
-| `tools/animals/preview.py` | Renders all animals side by side to `work/animals_preview.png` |
+| `tools/animals/preview.py` | Renders all animals (or those named after `--`) in a grid, each scaled to its cell, to `work/animals_preview.png` |
 
 ```bash
 node tools/landmarks/prepare.mjs
