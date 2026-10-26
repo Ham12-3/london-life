@@ -7,6 +7,7 @@ import { loadManifest, streamAssets } from "./assets.js";
 import { createRenderer, setupAtmosphere, createPipeline, QUALITY } from "./render.js";
 import { createTrees, TREE_RANGE } from "./trees.js";
 import { createGrass, GRASS_AMOUNT } from "./grass.js";
+import { initBuildingDetail } from "./buildings.js";
 
 const status = document.getElementById("status");
 const qualityChip = document.getElementById("quality");
@@ -21,7 +22,7 @@ const scene = new THREE.Scene();
 const camera = new THREE.PerspectiveCamera(70, innerWidth / innerHeight, 0.1, 3000);
 const { sun } = setupAtmosphere(renderer, scene);
 
-const [world, manifest] = await Promise.all([fetch("world.json").then((r) => r.json()), loadManifest()]);
+const [world, manifest] = await Promise.all([fetch("world.json").then((r) => r.json()), loadManifest(), initBuildingDetail()]);
 const items = (manifest.items || []).filter((i) => SHOW_SPLATS || i.type !== "splat");
 const hiddenBuildings = new Set(items.filter((i) => i.replacesBuilding).map((i) => i.anchor));
 const replacedSpecies = new Set(items.filter((i) => i.species).map((i) => i.species));

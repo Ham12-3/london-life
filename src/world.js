@@ -4,6 +4,7 @@ import * as THREE from "three";
 import { mergeGeometries } from "three/addons/utils/BufferGeometryUtils.js";
 import { pbr } from "./materials.js";
 import { waterMaterial } from "./water.js";
+import { BuildingDetail } from "./buildings.js";
 
 // Surfaces: Poly Haven texture set, metres per repeat, tint. `grass` (0..1) is how densely the
 // wind-blown grass grows there (see grass.js).
@@ -378,6 +379,7 @@ export function buildWorld(world, scene, { hiddenBuildings = new Set(), captured
   // Buildings: walls with doorways (so every zoo building can be entered), interior floor, roof.
   const wallGeos = { brick_red: [], brick_buff: [], render: [] }, roofGeos = [], floorGeos = [], ceilingGeos = [];
   const buildingInfo = [];
+  const detail = new BuildingDetail();
   for (const [bi, b] of world.buildings.entries()) {
     const ring = b.pts;
     const id = b.name || `b${bi}`;
@@ -400,10 +402,12 @@ export function buildWorld(world, scene, { hiddenBuildings = new Set(), captured
     const finish = wallGeos[b.inZoo ? "render" : WALL_FINISH[color] || "render"];
     // Buildings inside a captured enclosure are part of its splat; keep their walls for collision only.
     const hidden = hiddenBuildings.has(b.name) || inCaptured(...centreOf(ring.slice(0, -1)));
+    const edges = [];
     for (let i = 0; i < ring.length - 1; i++) {
       const a = ring[i], c = ring[i + 1];
       if (Math.hypot(c[0] - a[0], c[1] - a[1]) < 0.05) continue;
       const { solid, gaps } = solidIntervals(a, c, b.inZoo ? doors : [], DOOR_WIDTH);
+      edges.push({ a, c, solid, gaps });
       for (const [p, q] of solid) {
         col.addSegment(p[0], p[1], q[0], q[1]);
         if (!hidden) finish.push(paint(wallBox(p[0], p[1], q[0], q[1], 0, b.h, WALL_THICKNESS), color));
@@ -411,9 +415,11 @@ export function buildWorld(world, scene, { hiddenBuildings = new Set(), captured
       if (!hidden && b.h > DOOR_HEIGHT + 0.2)
         for (const [p, q] of gaps) finish.push(paint(wallBox(p[0], p[1], q[0], q[1], DOOR_HEIGHT, b.h, WALL_THICKNESS), color));
     }
+    // Plinth, cornice or parapet, windows, door surrounds and (often) a pitched roof: see buildings.js.
+    const style = hidden ? { roof: "flat", top: b.h } : detail.add(b, id, edges, finish, color);
     if (!hidden) {
       try {
-        roofGeos.push(paint(flatShape(ring, b.h), b.kind === "cage" ? 0x3a3f3a : 0x5c5852));
+        if (style.roof === "flat") roofGeos.push(paint(flatShape(ring, b.h), b.kind === "cage" ? 0x3a3f3a : 0x5c5852));
         if (b.inZoo) {
           floorGeos.push(flatShape(ring, 0.11));
           ceilingGeos.push(flatShape(ring, b.h - 0.05));
@@ -424,11 +430,12 @@ export function buildWorld(world, scene, { hiddenBuildings = new Set(), captured
     if (b.name && b.inZoo) {
       const xs = ring.map((p) => p[0]), zs = ring.map((p) => p[1]);
       const label = makeLabel(b.name, { size: 26 });
-      label.position.set(xs.reduce((s, v) => s + v, 0) / xs.length, b.h + 1.6, zs.reduce((s, v) => s + v, 0) / zs.length);
+      label.position.set(xs.reduce((s, v) => s + v, 0) / xs.length, style.top + 1.4, zs.reduce((s, v) => s + v, 0) / zs.length);
       labels.push(label);
       scene.add(label);
     }
   }
+  detail.build(scene);
   for (const [finish, geos] of Object.entries(wallGeos)) {
     if (!geos.length) continue;
     const walls = new THREE.Mesh(mergeGeometries(geos), WALL_MATERIALS[finish]());

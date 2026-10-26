@@ -2,7 +2,7 @@
 // Every surface is mapped in world space, in metres: ground from above, walls along their length, so
 // bricks and paving stones keep their real size on any shape without per-mesh UVs.
 import * as THREE from "three/webgpu";
-import { texture, positionWorld, normalWorldGeometry, cameraViewMatrix, vec2, vec3, vec4, float, abs, select, attribute, luminance } from "three/tsl";
+import { texture, positionWorld, normalWorldGeometry, cameraViewMatrix, vec2, vec3, vec4, float, abs, select, attribute, luminance, uv as meshUV, normalMap } from "three/tsl";
 
 const loader = new THREE.TextureLoader();
 const cache = new Map();
@@ -45,10 +45,12 @@ function boxFrame(tile) {
  * @param {boolean} [o.vertexTint] multiply in the mesh's vertex colours (per-building paint)
  * @param {number} [o.normalScale]
  * @param {number} [o.roughness] scale on the scanned roughness
+ * @param {"world"|"mesh"} [o.uv] world-space box mapping, or the mesh's own uvs (in metres)
  */
-export function pbr(id, { tile = 2, tint = 0xffffff, colorize = null, vertexTint = false, normalScale = 1, roughness = 1, side } = {}) {
+export function pbr(id, { tile = 2, tint = 0xffffff, colorize = null, vertexTint = false, normalScale = 1, roughness = 1, side, uv: mapping = "world" } = {}) {
   const set = textureSet(id);
-  const { uv, T, B, N } = boxFrame(float(tile));
+  const mesh = mapping === "mesh";
+  const { uv, T, B, N } = mesh ? { uv: meshUV().div(tile) } : boxFrame(float(tile));
   const m = new THREE.MeshStandardNodeMaterial({ side });
   const diff = texture(set.diff, uv).rgb;
   let albedo = colorize ? vec3(...colorize).mul(luminance(diff).mul(11))
@@ -59,6 +61,10 @@ export function pbr(id, { tile = 2, tint = 0xffffff, colorize = null, vertexTint
   m.aoNode = arm.r;
   m.roughnessNode = arm.g.mul(roughness).clamp(0.04, 1);
   m.metalnessNode = float(0);
+  if (mesh) {
+    m.normalNode = normalMap(texture(set.nor, uv), vec2(normalScale));
+    return m;
+  }
   const nt = texture(set.nor, uv).xyz.mul(2).sub(1);
   const nWorld = T.mul(nt.x.mul(normalScale)).add(B.mul(nt.y.mul(normalScale))).add(N.mul(nt.z)).normalize();
   m.normalNode = cameraViewMatrix.mul(vec4(nWorld, 0)).xyz.normalize();

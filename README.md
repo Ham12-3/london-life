@@ -41,6 +41,7 @@ Add `?gpu` to the URL to turn on GPU timers (`zoo.renderer.info.render.timestamp
 | `tools/build_world.py` | OSM → `public/world.json` in local metres, plus doorways and fence gaps where paths cross. Also writes `tools/shotlist.json` |
 | `src/render.js` | WebGPU renderer: physical sky with clouds, sky lighting, cascaded sun shadows, haze, GTAO, TAAU upscaling, quality levels |
 | `src/world.js` | Ground, paths, buildings (walls with doorways, floors, ceilings, roofs), fences, water, furniture, labels, collision |
+| `src/buildings.js` | Detail for every building: plinth, cornice or parapet, windows per storey, door surrounds and front doors, hipped slate/tile roofs from the outline's straight skeleton |
 | `src/materials.js` | Poly Haven PBR surfaces, mapped in world-space metres (brick, render, paving, asphalt, lawn, dirt…) |
 | `src/trees.js` | Ez-Tree oaks, ashes and aspens with wind sway near you; baked impostor cards further out |
 | `src/grass.js` | Wind-blown grass blades around you, grown from a density mask of the map's lawns |

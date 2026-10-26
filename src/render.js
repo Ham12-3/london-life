@@ -119,7 +119,10 @@ export function createPipeline(renderer, scene, camera) {
   const withAO = vec4(sharpened.rgb.mul(occlusion), 1);
 
   const state = { mode: "auto", level: "medium" };
+  // Shaders compile during the first frames and after every change; don't judge speed meanwhile.
+  let holdUntil = performance.now() + 10000, slowWindows = 0;
   function apply(level) {
+    holdUntil = Math.max(holdUntil, performance.now() + 3000);
     const q = QUALITY[level];
     state.level = level;
     scenePass.setResolutionScale(q.scale);
@@ -129,20 +132,27 @@ export function createPipeline(renderer, scene, camera) {
   apply(state.level);
 
   // Auto quality: average frame time over ~2 s windows; step down below ~40 fps, try a step up while
-  // holding 60. A level that was too slow once is never retried, so it can't flip back and forth.
-  let frames = 0, elapsed = 0, settledAt = 0, ceiling = ORDER.length - 1;
+  // holding 60. Each step down makes the next try wait three times longer (10 s, 30 s, 90 s, up to
+  // 5 min), so it settles instead of flipping back and forth, but recovers after a slow start.
+  let frames = 0, elapsed = 0, settledAt = 0, upAfter = 10000;
   function measure(dt) {
-    if (state.mode !== "auto" || document.hidden) return;
+    if (state.mode !== "auto" || document.hidden || performance.now() < holdUntil) {
+      frames = elapsed = 0;
+      return;
+    }
     frames++;
     elapsed += dt;
     if (elapsed < 2) return;
     const ms = (elapsed / frames) * 1000;
+    state.frameMs = ms;
     frames = 0;
     elapsed = 0;
     const i = ORDER.indexOf(state.level);
     const now = performance.now();
-    if (ms > 25 && i > 0) { ceiling = i - 1; apply(ORDER[i - 1]); settledAt = now; }
-    else if (ms < 18 && i < ceiling && now - settledAt > 10000) { apply(ORDER[i + 1]); settledAt = now; }
+    // Two slow windows in a row (4 s), so a one-off hitch (teleport, texture upload) doesn't count.
+    slowWindows = ms > 25 ? slowWindows + 1 : 0;
+    if (slowWindows >= 2 && i > 0) { slowWindows = 0; upAfter = Math.min(upAfter * 3, 300000); apply(ORDER[i - 1]); settledAt = now; }
+    else if (ms < 20 && i < ORDER.length - 1 && now - settledAt > upAfter) { apply(ORDER[i + 1]); settledAt = now; }
   }
 
   return {

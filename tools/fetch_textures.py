@@ -29,6 +29,8 @@ TEXTURES = [
     "asphalt_02",           # roads and cycleways
     "precast_stone_paving", # steps
     "wood_planks",          # bridges
+    "roof_slates_02",       # slate roofs on houses and small zoo buildings
+    "clay_roof_tiles",      # clay tile roofs on pavilions and kiosks
 ]
 MAPS = {"diff": "Diffuse", "nor": "nor_gl", "arm": "arm"}
 EXTRA = {

@@ -83,8 +83,8 @@ function makeAnimal(sp) {
   return flatten(g);
 }
 
-// One mesh per animal (parts baked in, colours per vertex): a hundred animals stay a hundred draw calls
-// per pass instead of six hundred.
+// One geometry per species (parts baked in, colours per vertex), instanced: every animal of a
+// species is drawn in a single call.
 const animalMaterial = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.9 });
 function flatten(group) {
   const parts = group.children.map((m) => {
@@ -95,9 +95,7 @@ function flatten(group) {
     geo.setAttribute("color", new THREE.BufferAttribute(rgb, 3));
     return geo;
   });
-  const mesh = new THREE.Mesh(mergeGeometries(parts), animalMaterial);
-  mesh.castShadow = true;
-  return mesh;
+  return mergeGeometries(parts);
 }
 
 function randomPointIn(area, rnd) {
@@ -113,6 +111,7 @@ export function spawnAnimals(world, scene, { replacedSpecies = new Set(), captur
   let seed = 42;
   const rnd = () => ((seed = (seed * 16807) % 2147483647) / 2147483647);
   const animals = [];
+  const herds = new Map(); // species -> { geo, animals }
   for (const a of world.areas) {
     const sp = SPECIES.find((s) => s.match.test(a.name));
     // A captured splat of the enclosure already shows its animals.
@@ -120,14 +119,23 @@ export function spawnAnimals(world, scene, { replacedSpecies = new Set(), captur
     const xs = a.pts.map((p) => p[0]), zs = a.pts.map((p) => p[1]);
     const area = { ...a, bb: { minX: Math.min(...xs), maxX: Math.max(...xs), minZ: Math.min(...zs), maxZ: Math.max(...zs) } };
     const count = Math.max(1, Math.min(sp.count, Math.round(a.a / 40)));
+    if (!herds.has(sp)) herds.set(sp, { geo: makeAnimal(sp), animals: [] });
     for (let i = 0; i < count; i++) {
-      const mesh = makeAnimal(sp);
+      const mesh = new THREE.Object3D(); // placement only; drawn by the species' InstancedMesh
       const [x, z] = randomPointIn(area, rnd);
       mesh.position.set(x, 0, z);
       mesh.rotation.y = rnd() * Math.PI * 2;
-      scene.add(mesh);
-      animals.push({ mesh, area, species: sp, target: randomPointIn(area, rnd), wait: rnd() * 5, speed: 0.4 + sp.len * 0.3, rnd });
+      const an = { mesh, area, species: sp, target: randomPointIn(area, rnd), wait: rnd() * 5, speed: 0.4 + sp.len * 0.3, rnd };
+      herds.get(sp).animals.push(an);
+      animals.push(an);
     }
+  }
+  for (const herd of herds.values()) {
+    herd.inst = new THREE.InstancedMesh(herd.geo, animalMaterial, herd.animals.length);
+    herd.inst.castShadow = true;
+    herd.inst.frustumCulled = false; // animals wander; the bounds would go stale
+    herd.animals.forEach((an, i) => { an.mesh.updateMatrix(); herd.inst.setMatrixAt(i, an.mesh.matrix); });
+    scene.add(herd.inst);
   }
   return {
     animals,
@@ -150,6 +158,10 @@ export function spawnAnimals(world, scene, { replacedSpecies = new Set(), captur
         p.x += (dx / d) * step;
         p.z += (dz / d) * step;
         p.y = Math.abs(Math.sin(performance.now() / 180)) * 0.03;
+      }
+      for (const herd of herds.values()) {
+        herd.animals.forEach((an, i) => { an.mesh.updateMatrix(); herd.inst.setMatrixAt(i, an.mesh.matrix); });
+        herd.inst.instanceMatrix.needsUpdate = true;
       }
     },
   };
