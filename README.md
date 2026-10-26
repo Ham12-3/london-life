@@ -64,7 +64,8 @@ runs through its `blender-launcher` alias).
 | Path | What |
 | --- | --- |
 | `tools/landmarks/prepare.mjs` | Real footprints of each landmark from `world.json`, plus straight-skeleton hipped roofs |
-| `tools/landmarks/build.py` | Models the Lubetkin Penguin Pool, Snowdon Aviary, Casson Pavilion, Clock Tower, Giraffe House, Raven Cage and Blackburn Pavilion on those footprints; writes `public/assets/landmarks/*.glb` and `landmarks.json` |
+| `tools/landmarks/build.py` | Models the Outer Circle main entrance (lodges, turnstiles, canopy and LONDON ZOO fascia), the 1927 Reptile House, Gorilla Kingdom, Rainforest Life, Land of the Lions (Sasan Gir station, high street, temple), Tiger Territory (mesh canopy on masts), the Lubetkin Penguin Pool, Snowdon Aviary, Casson Pavilion, Clock Tower, Giraffe House, Raven Cage and Blackburn Pavilion on their footprints; writes `public/assets/landmarks/*.glb` and `landmarks.json` |
+| `tools/landmarks/signs.py` | Paints the signs and banners the landmarks use (`public/assets/landmarks/textures/`) |
 | `tools/animals/build.py` | 23 species built with Blender's Skin modifier, coats painted into vertex colours; writes `public/assets/animals/*.glb` and `animals.json` (leg joints for the walk cycle) |
 | `tools/animals/preview.py` | Renders all animals side by side to `work/animals_preview.png` |
 

@@ -19,7 +19,10 @@ const { SkeletonBuilder } = require("straight-skeleton");
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..");
 const world = JSON.parse(fs.readFileSync(path.join(root, "public/world.json"), "utf8"));
 
-// id, footprint source, roofs to skeletonise: [footprint index, eave height, pitch, overhang]
+// id, footprint source, roofs to skeletonise: [footprint index, eave height, pitch, overhang].
+// Footprints come from a named building, OSM building indices (`ids`, for unnamed ones), or an area;
+// with `within`, the area's outline comes first, then every building standing inside it, and
+// `roofsAll` gives each of those buildings a hipped roof.
 const LANDMARKS = [
   { id: "penguin-pool", building: "Lubetkin Pool" },
   { id: "snowdon-aviary", area: "Monkey Valley" },
@@ -28,7 +31,34 @@ const LANDMARKS = [
   { id: "giraffe-house", building: "The Giraffe House", roofs: [[0, 8.0, 26, 0.45]] },
   { id: "raven-cage", building: "Raven Cage" },
   { id: "blackburn-pavilion", building: "Blackburn Pavilion", roofs: [[0, 6.6, 30, 0.4]] },
+  { id: "main-entrance", building: "London Zoo Entrance" },
+  { id: "reptile-house", ids: [133], label: "Reptile House", roofs: [[0, 7.6, 24, 0.45]] },
+  { id: "gorilla-kingdom", area: "Gorilla Kingdom", within: 12, roofsAll: [5.2, 22, 1.1] },
+  { id: "rainforest-life", area: "Rainforest Life", within: 2 },
+  { id: "land-of-the-lions", area: "Land of the Lions", within: 8 },
+  { id: "tiger-territory", area: "Tiger Territory", within: 6, roofsAll: [3.4, 34, 0.9] },
 ];
+
+const centroid = (r) => [r.slice(0, -1).reduce((s, p) => s + p[0], 0) / (r.length - 1), r.slice(0, -1).reduce((s, p) => s + p[1], 0) / (r.length - 1)];
+function inside(pts, x, z) {
+  let res = false;
+  for (let i = 0, j = pts.length - 1; i < pts.length; j = i++) {
+    const [xi, zi] = pts[i], [xj, zj] = pts[j];
+    if (zi > z !== zj > z && x < ((xj - xi) * (z - zi)) / (zj - zi + 1e-12) + xi) res = !res;
+  }
+  return res;
+}
+function edgeDist(pts, x, z) {
+  let d = Infinity;
+  for (let i = 0; i < pts.length - 1; i++) {
+    const [ax, az] = pts[i], [bx, bz] = pts[i + 1], dx = bx - ax, dz = bz - az;
+    const t = Math.max(0, Math.min(1, ((x - ax) * dx + (z - az) * dz) / (dx * dx + dz * dz || 1e-9)));
+    d = Math.min(d, Math.hypot(ax + t * dx - x, az + t * dz - z));
+  }
+  return d;
+}
+// world.js ids: a building's name, or b<index> when it has none.
+const idOf = (b) => b.name || `b${world.buildings.indexOf(b)}`;
 
 const area = (r) => r.slice(0, -1).reduce((s, p, i) => s + p[0] * r[i + 1][1] - r[i + 1][0] * p[1], 0) / 2;
 
@@ -64,9 +94,23 @@ function simplify(ring, tol = 0.15) {
 await SkeletonBuilder.init();
 const out = [];
 for (const L of LANDMARKS) {
-  const src = L.area ? world.areas.filter((a) => a.name === L.area) : world.buildings.filter((b) => b.name === L.building);
-  if (!src.length) { console.warn(`missing ${L.building || L.area}`); continue; }
-  src.sort((a, b) => Math.abs(area(b.pts)) - Math.abs(area(a.pts))); // main footprint first
+  let src, replaces = [];
+  if (L.within) {
+    const a = world.areas.find((x) => x.name === L.area);
+    if (!a) { console.warn(`missing ${L.area}`); continue; }
+    // Buildings inside the area, or within `within` metres of its outline (gates, houses on the edge).
+    const blds = world.buildings.filter((b) => { const c = centroid(b.pts); return inside(a.pts, ...c) || edgeDist(a.pts, ...c) < L.within; });
+    src = [a, ...blds];
+    replaces = blds.map(idOf);
+  } else if (L.ids) {
+    src = L.ids.map((i) => world.buildings[i]);
+    replaces = src.map(idOf);
+  } else {
+    src = L.area ? world.areas.filter((a) => a.name === L.area) : world.buildings.filter((b) => b.name === L.building);
+    if (!src.length) { console.warn(`missing ${L.building || L.area}`); continue; }
+    src.sort((a, b) => Math.abs(area(b.pts)) - Math.abs(area(a.pts))); // main footprint first
+    replaces = L.area ? [] : [...new Set(src.map(idOf))];
+  }
   const main = src[0].pts;
   const cx = main.slice(0, -1).reduce((s, p) => s + p[0], 0) / (main.length - 1);
   const cz = main.slice(0, -1).reduce((s, p) => s + p[1], 0) / (main.length - 1);
@@ -75,13 +119,15 @@ for (const L of LANDMARKS) {
     if (area(r) < 0) r = r.reverse(); // counter-clockwise in Blender's x/y
     return r;
   });
-  const roofs = (L.roofs || []).map(([fi, eave, pitch, overhang]) => {
+  const roofSpecs = [...(L.roofs || [])];
+  if (L.roofsAll) for (let fi = 1; fi < footprints.length; fi++) roofSpecs.push([fi, ...L.roofsAll]);
+  const roofs = roofSpecs.map(([fi, eave, pitch, overhang]) => {
     const ring = offsetRing(simplify(footprints[fi]), overhang);
     const sk = SkeletonBuilder.buildFromPolygon([ring]);
-    if (!sk) { console.warn(`${L.id}: no skeleton`); return null; }
-    return { eave, slope: Math.tan((pitch * Math.PI) / 180), vertices: sk.vertices, polygons: sk.polygons };
+    if (!sk) { console.warn(`${L.id}: no skeleton for footprint ${fi}`); return null; }
+    return { fi, eave, slope: Math.tan((pitch * Math.PI) / 180), vertices: sk.vertices, polygons: sk.polygons };
   }).filter(Boolean);
-  out.push({ id: L.id, name: L.building || L.area, origin: [cx, cz], footprints, roofs });
+  out.push({ id: L.id, name: L.label || L.building || L.area, origin: [cx, cz], footprints, roofs, replaces });
   console.log(`${L.id}: ${footprints.length} footprint(s), ${roofs.length} roof(s)`);
 }
 const dest = path.join(root, "work/landmarks/input.json");

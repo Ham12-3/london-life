@@ -294,6 +294,45 @@ def penguin_pool(L, B):
     return {"top": 2.0}
 
 
+def tension_net(B, P, peaks, base, reach=17.0, mat="net"):
+    """Mesh draped over an outline (held at height `base`) and pulled up to mast/frame peaks: a
+    constrained Delaunay surface over the outline, tented to the peaks, then relaxed like a cable net."""
+    bnd = resample(P, 1.6)
+    pts = list(bnd)
+    gx = min(p[0] for p in P)
+    while gx < max(p[0] for p in P):
+        gy = min(p[1] for p in P)
+        while gy < max(p[1] for p in P):
+            if inside(P, gx, gy) and min(math.hypot(gx - q[0], gy - q[1]) for q in bnd) > 1.0:
+                pts.append((gx, gy))
+            gy += 1.7
+        gx += 1.7
+    apex_idx = []
+    for (x, y, h) in peaks:
+        apex_idx.append(len(pts))
+        pts.append((x, y))
+    nb = len(bnd)
+    res = delaunay_2d_cdt([Vector(p) for p in pts], [(i, (i + 1) % nb) for i in range(nb)], [], 1, 1e-4)
+    vco, faces, orig = res[0], res[2], res[3]
+    fixed, z = {}, []
+    for i, co in enumerate(vco):
+        src = orig[i][0] if orig[i] else None
+        if src is not None and src < nb:
+            fixed[i] = base
+        elif src is not None and src in apex_idx:
+            fixed[i] = peaks[apex_idx.index(src)][2] - 0.2
+        tent = max(base, max(h - (h - base) * math.hypot(co.x - x, co.y - y) / reach for x, y, h in peaks))
+        z.append(fixed.get(i, tent))
+    nbrs = [set() for _ in vco]
+    for f in faces:
+        for i in range(len(f)):
+            nbrs[f[i]].add(f[i - 1])
+            nbrs[f[i - 1]].add(f[i])
+    for _ in range(60):  # relax towards a tension surface
+        z = [z[i] if i in fixed else 0.5 * z[i] + 0.5 * sum(z[j] for j in nbrs[i]) / max(1, len(nbrs[i])) for i in range(len(vco))]
+    B.shared([(co.x, co.y, z[i]) for i, co in enumerate(vco)], [list(f) for f in faces], mat, lambda p: (p[0] / 2, p[1] / 2))
+
+
 def snowdon_aviary(L, B):
     """Cedric Price, Lord Snowdon & Frank Newby, 1964: aluminium tetrahedral frames held in tension,
     with stainless-steel mesh draped between their peaks. Now Monkey Valley."""
@@ -319,42 +358,7 @@ def snowdon_aviary(L, B):
             B.tube((gx, gy, 0.6), (x, y, h), 0.2, "alu", 10)
     B.tube(peaks[0], peaks[1], 0.14, "alu")
     B.tube(peaks[2], peaks[3], 0.14, "alu")
-    # The mesh: a constrained Delaunay surface over the outline, pulled up to the peaks and relaxed.
-    bnd = resample(P, 1.6)
-    pts = list(bnd)
-    gx = min(p[0] for p in P)
-    while gx < max(p[0] for p in P):
-        gy = min(p[1] for p in P)
-        while gy < max(p[1] for p in P):
-            if inside(P, gx, gy) and min(math.hypot(gx - q[0], gy - q[1]) for q in bnd) > 1.0:
-                pts.append((gx, gy))
-            gy += 1.7
-        gx += 1.7
-    apex_idx = []
-    for (x, y, h) in peaks:
-        apex_idx.append(len(pts))
-        pts.append((x, y))
-    nb = len(bnd)
-    res = delaunay_2d_cdt([Vector(p) for p in pts], [(i, (i + 1) % nb) for i in range(nb)], [], 1, 1e-4)
-    vco, _edges, faces = res[0], res[1], res[2]
-    orig = res[3]
-    fixed, z = {}, []
-    for i, co in enumerate(vco):
-        src = orig[i][0] if orig[i] else None
-        if src is not None and src < nb:
-            fixed[i] = 0.6
-        elif src is not None and src in apex_idx:
-            fixed[i] = peaks[apex_idx.index(src)][2] - 0.2
-        tent = max(0.6, max(h - (h - 0.6) * math.hypot(co.x - x, co.y - y) / 17.0 for x, y, h in peaks))
-        z.append(fixed.get(i, tent))
-    nbrs = [set() for _ in vco]
-    for f in faces:
-        for i in range(len(f)):
-            nbrs[f[i]].add(f[i - 1])
-            nbrs[f[i - 1]].add(f[i])
-    for _ in range(60):  # relax towards a tension surface
-        z = [z[i] if i in fixed else 0.5 * z[i] + 0.5 * sum(z[j] for j in nbrs[i]) / max(1, len(nbrs[i])) for i in range(len(vco))]
-    B.shared([(co.x, co.y, z[i]) for i, co in enumerate(vco)], [list(f) for f in faces], "net", lambda p: (p[0] / 2, p[1] / 2))
+    tension_net(B, P, peaks, 0.6)
     return {"top": max(h for _, _, h in peaks) + 0.5}
 
 
@@ -559,12 +563,438 @@ def blackburn_pavilion(L, B):
     return {"top": top + 0.5}
 
 
+SIGN_UV = [(0, 0), (1, 0), (1, 1), (0, 1)]
+
+
+def edges_of(P):
+    """(a, b, length, along-x, along-y, out-x, out-y) for each edge of a counter-clockwise ring."""
+    out = []
+    for i in range(len(P)):
+        a, b = P[i], P[(i + 1) % len(P)]
+        ln = math.hypot(b[0] - a[0], b[1] - a[1])
+        if ln > 1e-3:
+            ux, uy = (b[0] - a[0]) / ln, (b[1] - a[1]) / ln
+            out.append((a, b, ln, ux, uy, uy, -ux))
+    return out
+
+
+def wall_panel(B, a, ux, uy, nx, ny, u0, u1, z0, z1, proud, mat, uvs=None):
+    """A flat panel on a wall face, `proud` metres out from it, between u0..u1 along the wall."""
+    p = lambda u, z: (a[0] + ux * u + nx * proud, a[1] + uy * u + ny * proud, z)
+    B.face([p(u0, z0), p(u1, z0), p(u1, z1), p(u0, z1)], mat, uvs=uvs)
+
+
+def pyramid_roof(B, cx, cy, half, yaw, eave, rise, mat, under="timber_white", overhang=0.7):
+    """Square hipped (pyramid) roof with an overhang, soffit and finial."""
+    h = half + overhang
+    cs, sn = math.cos(yaw), math.sin(yaw)
+    corners = [(cx + (x * cs - y * sn), cy + (x * sn + y * cs), eave) for x, y in ((-h, -h), (h, -h), (h, h), (-h, h))]
+    apex = (cx, cy, eave + rise)
+    for i in range(4):
+        a, b = corners[i], corners[(i + 1) % 4]
+        ln = math.dist(a, b)
+        slope = math.hypot(h, rise)
+        B.face([a, b, apex], mat, uvs=[(0, 0), (ln, 0), (ln / 2, slope)])
+    B.face([(x, y, z - 0.12) for x, y, z in corners[::-1]], under)
+    B.tube(apex, (cx, cy, eave + rise + 0.7), 0.04, "iron")
+    B.sphere((cx, cy, eave + rise + 0.25), 0.12, "iron")
+
+
+def arched_window(B, x, y, ux, uy, nx, ny, w, z0, z1, mats=("stone", "glass")):
+    for off, ww, mat in ((0.025, w / 2 + 0.2, mats[0]), (0.045, w / 2, mats[1])):
+        shape = [(-ww, z0), (ww, z0), (ww, z1)] + [(ww * math.cos(math.pi * j / 12), z1 + ww * math.sin(math.pi * j / 12)) for j in range(1, 12)] + [(-ww, z1)]
+        B.face([(x + ux * sx + nx * off, y + uy * sx + ny * off, z) for sx, z in shape], mat)
+
+
+def entrance_world_local(L):
+    """The main entrance, in this landmark's local Blender coordinates."""
+    world = json.load(open(os.path.join(ROOT, "public", "world.json"), encoding="utf-8"))
+    s = world["start"]
+    return (s["x"] - L["origin"][0], -(s["z"] - L["origin"][1]))
+
+
+def main_entrance(L, B):
+    """The Outer Circle entrance: two square white lodges with steep dark-tiled pyramid roofs either
+    side of a low turnstile block (white columns, roller shutters) under a flat canopy on dark steel
+    posts, with the painted LONDON ZOO fascia, crook lamp posts with banners, all behind a brick
+    plinth. The building behind is low, rendered and parapeted."""
+    P = ccw(ring(L["footprints"][0]))
+    render = "render_f1eee6"
+    B.prism(P, 0, 3.8, render, top=True, top_mat="roof_flat")
+    B.prism(offset(P, 0.05), 0, 0.5, "brick_red", top=False)
+    B.ring_wall(P, 3.8, 4.4, 0.25, render)
+    B.ring_wall(offset(P, 0.06), 4.4, 4.5, 0.37, "stone")
+    # The frontage faces the Outer Circle (north): the long edge whose outside looks north.
+    front = max((e for e in edges_of(P) if e[2] > 8), key=lambda e: e[6] * 10 + (e[0][1] + e[1][1]) / 2 * 0.01)
+    a, b, Lf, ux, uy, nx, ny = front
+    yaw = math.atan2(uy, ux)
+    at = lambda u, out=0.0: (a[0] + ux * u + nx * out, a[1] + uy * u + ny * out)
+    # Lodges at each end.
+    lodge = 4.6
+    for u in (1.6, Lf - 1.6):
+        cx, cy = at(u, -lodge / 2 + 0.6)
+        B.box((cx, cy, 2.4), (lodge, lodge, 4.8), yaw, render)
+        B.box((cx, cy, 0.3), (lodge + 0.12, lodge + 0.12, 0.6), yaw, "brick_red")
+        for sx in (-1, 1):  # brick quoins up the corners
+            for sy in (-1, 1):
+                qx = cx + (ux * sx - (-nx) * 0) * (lodge / 2 - 0.15) + nx * sy * (lodge / 2 - 0.15)
+                qy = cy + uy * sx * (lodge / 2 - 0.15) + ny * sy * (lodge / 2 - 0.15)
+                B.box((qx, qy, 2.4), (0.34, 0.34, 4.8), yaw, "brick_red")
+        wx, wy = cx + nx * (lodge / 2 + 0.02), cy + ny * (lodge / 2 + 0.02)
+        B.box((wx, wy, 2.6), (1.2, 0.06, 1.4), yaw, "frame_white")
+        B.box((wx + nx * 0.01, wy + ny * 0.01, 2.6), (1.0, 0.06, 1.2), yaw, "glass")
+        B.box((cx, cy, 4.9), (lodge + 0.3, lodge + 0.3, 0.2), yaw, "stone")
+        pyramid_roof(B, cx, cy, lodge / 2, yaw, 5.0, 2.9, "tiles_dark", overhang=0.75)
+    # Turnstile frontage between the lodges: shutters between white columns.
+    u0, u1 = 1.6 + lodge / 2 + 0.3, Lf - 1.6 - lodge / 2 - 0.3
+    bays = max(2, round((u1 - u0) / 2.4))
+    bw = (u1 - u0) / bays
+    for k in range(bays):
+        s0, s1 = u0 + k * bw + 0.22, u0 + (k + 1) * bw - 0.22
+        wall_panel(B, a, ux, uy, nx, ny, s0, s1, 0.25, 2.9, 0.05, "shutter", uvs=[(0, 0), (1, 0), (1, 2.6 / 1.28), (0, 2.6 / 1.28)])
+    for k in range(bays + 1):
+        px, py = at(u0 + k * bw, 0.25)
+        B.tube((px, py, 0), (px, py, 3.1), 0.16, "render_f7f5ef", 12)
+        B.box((px, py, 0.12), (0.45, 0.45, 0.24), yaw, "stone")
+        B.box((px, py, 3.1), (0.45, 0.45, 0.16), yaw, "stone")
+    # Canopy on dark posts, with the painted fascia along its front.
+    c0, c1, depth = u0 - 1.2, u1 + 1.2, 3.2
+    q = lambda u, out, z: (a[0] + ux * u + nx * out, a[1] + uy * u + ny * out, z)
+    for z, d in ((3.35, (0, 0, 1)), (3.17, (0, 0, -1))):
+        quad = [q(c0, 0, z), q(c1, 0, z), q(c1, depth, z), q(c0, depth, z)]
+        B.face(quad if d[2] > 0 else quad[::-1], "paint_2b302d")
+    B.face([q(c0, depth, 3.17), q(c1, depth, 3.17), q(c1, depth, 4.45), q(c0, depth, 4.45)], "banner_zoo", uvs=SIGN_UV)
+    B.face([q(c1, depth - 0.08, 3.17), q(c0, depth - 0.08, 3.17), q(c0, depth - 0.08, 4.45), q(c1, depth - 0.08, 4.45)], "paint_1f4a2c")
+    for u in [c0 + 0.3 + i * (c1 - c0 - 0.6) / 3 for i in range(4)]:
+        px, py, _ = q(u, depth - 0.15, 0)
+        B.tube((px, py, 0), (px, py, 3.17), 0.07, "paint_2b302d", 10)
+    # Crook lamp posts with banners, out on the pavement.
+    for u in (-2.5, Lf + 2.5):
+        px, py = at(u, 4.0)
+        crook = [(px, py, 0), (px, py, 5.2)] + [(px + ux * 0.45 * (1 - math.cos(t)), py + uy * 0.45 * (1 - math.cos(t)), 5.2 + 0.45 * math.sin(t)) for t in (0.4, 0.9, 1.4, 1.9, 2.4, 2.9)]
+        B.polyline_tube(crook, 0.06, "paint_e8e8e2", 8)
+        bx, by = px + ux * 0.12, py + uy * 0.12
+        B.face([(bx, by, 2.6), (bx + ux * 0.6, by + uy * 0.6, 2.6), (bx + ux * 0.6, by + uy * 0.6, 4.6), (bx, by, 4.6)], "fabric_1f6b3a")
+    return {"top": 8.6}
+
+
+def reptile_house(L, B):
+    """Joan Procter and Sir Edward Guy Dawber, 1927: dark stock brick with stone dressings; the
+    entrance bay has a stone doorcase on two columns carved REPTILE HOUSE, under a great arched
+    window; tall round-arched windows down the sides; a hipped roof glazed along its crown."""
+    P = ccw(ring(L["footprints"][0]))
+    B.prism(P, 0, 7.6, "brick_brown", top=False)
+    B.prism(offset(P, 0.06), 0, 0.8, "stone", top=False)
+    B.prism(offset(P, 0.12), 7.15, 7.6, "stone", top=False)
+    top = 7.6
+    for sk in L["roofs"]:
+        maxz = sk["eave"] + max(t for _, _, t in sk["vertices"]) * sk["slope"]
+        zc = sk["eave"] + (maxz - sk["eave"]) * 0.6
+        B.roof(sk, lambda pts: [(clip_z(pts, zc)[0], "slate"), (clip_z(pts, zc)[1], "glass_roof")])
+        top = maxz
+    ex, ey = entrance_world_local(L)
+    es = edges_of(P)
+    front = min((e for e in es if e[2] > 9), key=lambda e: math.hypot((e[0][0] + e[1][0]) / 2 - ex, (e[0][1] + e[1][1]) / 2 - ey))
+    for e in es:
+        a, b, ln, ux, uy, nx, ny = e
+        n = int(ln // 4.6)
+        for k in range(n):
+            t = (k + 0.5) * ln / n
+            x, y = a[0] + ux * t, a[1] + uy * t
+            if e is front and abs(t - ln / 2) < 5.5:
+                continue
+            arched_window(B, x, y, ux, uy, nx, ny, 1.4, 3.0, 5.6)
+            px, py = x + ux * ln / n / 2, y + uy * ln / n / 2
+            if k < n - 1:
+                B.box((px + nx * 0.08, py + ny * 0.08, 3.8), (0.55, 0.16, 7.6), math.atan2(uy, ux), "brick_brown")
+    a, b, ln, ux, uy, nx, ny = front
+    yaw = math.atan2(uy, ux)
+    mx, my = a[0] + ux * ln / 2, a[1] + uy * ln / 2
+    o = lambda d: (mx + nx * d, my + ny * d)
+    bx, by = o(0.3)
+    B.box((bx, by, 4.4), (9.2, 0.6, 8.8), yaw, "brick_brown")  # the projecting entrance bay
+    B.box((bx, by, 8.9), (9.6, 0.8, 0.25), yaw, "stone")
+    fx, fy = o(0.62)
+    B.face([(fx - ux * 1.35, fy - uy * 1.35, 0.15), (fx + ux * 1.35, fy + uy * 1.35, 0.15), (fx + ux * 1.35, fy + uy * 1.35, 3.4), (fx - ux * 1.35, fy - uy * 1.35, 3.4)], "timber_dark")
+    for s in (-1, 1):  # the doorcase columns
+        cx, cy = o(0.85)
+        cx, cy = cx + ux * s * 1.75, cy + uy * s * 1.75
+        B.box((cx, cy, 0.25), (0.62, 0.62, 0.5), yaw, "stone")
+        B.tube((cx, cy, 0.5), (cx, cy, 3.5), 0.22, "stone", 14)
+        B.box((cx, cy, 3.62), (0.62, 0.62, 0.24), yaw, "stone")
+    ex2, ey2 = o(0.9)
+    B.box((ex2, ey2, 4.05), (4.8, 0.6, 0.7), yaw, "stone")  # entablature
+    sx, sy = o(1.21)
+    B.face([(sx - ux * 2.2, sy - uy * 2.2, 3.82), (sx + ux * 2.2, sy + uy * 2.2, 3.82), (sx + ux * 2.2, sy + uy * 2.2, 4.32), (sx - ux * 2.2, sy - uy * 2.2, 4.32)], "sign_reptile", uvs=SIGN_UV)
+    # The great arched window over the door, with radiating glazing bars and a carved keystone.
+    gx, gy = o(0.62)
+    zc, r = 5.0, 2.3
+    semi = [(gx + ux * r * math.cos(math.pi * j / 20), gy + uy * r * math.cos(math.pi * j / 20), zc + r * math.sin(math.pi * j / 20)) for j in range(21)]
+    B.face(semi, "glass")
+    for j in range(21 - 1):
+        t0, t1 = math.pi * j / 20, math.pi * (j + 1) / 20
+        pts = [(gx + ux * rr * math.cos(t) + nx * 0.02, gy + uy * rr * math.cos(t) + ny * 0.02, zc + rr * math.sin(t)) for rr, t in ((r, t0), (r, t1), (r + 0.45, t1), (r + 0.45, t0))]
+        B.face(pts, "stone")
+    for j in range(1, 6):
+        t = math.pi * j / 6
+        B.tube((gx + nx * 0.04, gy + ny * 0.04, zc), (gx + ux * r * math.cos(t) + nx * 0.04, gy + uy * r * math.cos(t) + ny * 0.04, zc + r * math.sin(t)), 0.03, "iron", 6)
+    B.tube((gx - ux * r + nx * 0.04, gy - uy * r + ny * 0.04, zc), (gx + ux * r + nx * 0.04, gy + uy * r + ny * 0.04, zc), 0.035, "iron", 6)
+    kx, ky = o(0.75)
+    B.box((kx, ky, zc + r + 0.25), (0.7, 0.35, 0.9), yaw, "stone")
+    return {"top": top + 0.5}
+
+
+def gorilla_kingdom(L, B):
+    """Gorilla Kingdom (2007): a timber gorilla house under a deep thatched roof on posts, with big
+    viewing windows onto the island; the island ringed by a moat, with boulders and climbing poles."""
+    A = ccw(ring(L["footprints"][0]))
+    ac = centroid(A)
+    for fi, fp in enumerate(L["footprints"][1:], start=1):
+        P = ccw(ring(fp))
+        if abs(area2(P)) < 40:
+            continue
+        B.prism(P, 0, 5.2, "timber_weathered", top=False)
+        B.prism(offset(P, 0.05), 0, 0.6, "stone", top=False)
+        for sk in [r for r in L["roofs"] if r.get("fi") == fi]:
+            B.roof(sk, lambda pts: [(pts, "thatch")])
+            ring_o = offset(P, 0.8)
+            for k in range(0, len(ring_o)):
+                x, y = ring_o[k]
+                B.tube((x, y, 0), (x, y, 5.15), 0.13, "timber_dark", 8)
+        for a, b, ln, ux, uy, nx, ny in edges_of(P):
+            mx, my = (a[0] + b[0]) / 2, (a[1] + b[1]) / 2
+            if ln > 5 and (ac[0] - mx) * nx + (ac[1] - my) * ny > 0:  # faces the island: big glass
+                wall_panel(B, a, ux, uy, nx, ny, 0.8, ln - 0.8, 0.7, 4.2, 0.04, "glass")
+                for t in [0.8 + i * (ln - 1.6) / max(1, int((ln - 1.6) / 2.2)) for i in range(int((ln - 1.6) / 2.2) + 1)]:
+                    B.box((a[0] + ux * t + nx * 0.07, a[1] + uy * t + ny * 0.07, 2.45), (0.14, 0.12, 3.5), math.atan2(uy, ux), "timber_dark")
+    # Moat and island.
+    outer, inner = offset(A, -1.2), offset(A, -4.5)
+    n = len(outer)
+    for i in range(n):
+        p, q, pi, qi = outer[i], outer[(i + 1) % n], inner[i], inner[(i + 1) % n]
+        B.face([(p[0], p[1], 0.07), (q[0], q[1], 0.07), (qi[0], qi[1], 0.07), (pi[0], pi[1], 0.07)], "water")
+    rnd = __import__("random").Random(3)
+    isl = offset(A, -8)
+    for k in range(7):
+        for _ in range(30):
+            x, y = rnd.uniform(min(p[0] for p in isl), max(p[0] for p in isl)), rnd.uniform(min(p[1] for p in isl), max(p[1] for p in isl))
+            if inside(isl, x, y):
+                break
+        r = rnd.uniform(1.0, 2.2)
+        B.dome((x, y, 0), r * 1.3, r * rnd.uniform(0.8, 1.4), "rock", 10, 5)
+    for k in range(3):
+        cx, cy = ac[0] + math.cos(k * 2.1) * 5, ac[1] + math.sin(k * 2.1) * 5
+        B.tube((cx, cy, 0), (cx, cy, 7.5 - k), 0.16, "timber_dark", 8)
+        nxt = (ac[0] + math.cos((k + 1) * 2.1) * 5, ac[1] + math.sin((k + 1) * 2.1) * 5)
+        B.tube((cx, cy, 5.5 - k * 0.6), (nxt[0], nxt[1], 5.5 - (k + 1) % 3 * 0.6), 0.09, "timber_dark", 6)
+        for j in range(6):
+            t = j / 5
+            B.tube((cx, cy, 5.5 - k * 0.6 - 0.1), (cx + (nxt[0] - cx) * t, cy + (nxt[1] - cy) * t, 2.0), 0.025, "rope", 4)
+    return {"top": 8.5}
+
+
+def rainforest_life(L, B):
+    """Rainforest Life (2012): a low rendered base under a tall glazed barrel vault on steel arches."""
+    P = ccw(ring(L["footprints"][1] if len(L["footprints"]) > 1 else L["footprints"][0]))
+    B.prism(P, 0, 4.2, "render_d6d0c2", top=False)
+    B.prism(offset(P, 0.05), 0, 0.6, "stone", top=False)
+    B.prism(offset(P, 0.1), 3.9, 4.2, "stone", top=False)
+    (cx, cy), u, v, a, b = axes(P)
+    a, b = a - 0.6, b - 0.6
+    rise = min(8.5, b * 0.85)
+    nu, nv = max(4, int(a * 2 / 2.2)), 16
+    pt = lambda i, j: (cx + u[0] * (-a + 2 * a * i / nu) + v[0] * (-b * math.cos(math.pi * j / nv)),
+                       cy + u[1] * (-a + 2 * a * i / nu) + v[1] * (-b * math.cos(math.pi * j / nv)),
+                       4.2 + rise * math.sin(math.pi * j / nv))
+    for i in range(nu):
+        for j in range(nv):
+            B.face([pt(i, j), pt(i + 1, j), pt(i + 1, j + 1), pt(i, j + 1)], "glass_roof")
+    for i in range(0, nu + 1, 2):
+        B.polyline_tube([pt(i, j) for j in range(nv + 1)], 0.09, "paint_e8e8e2", 6)
+    for j in range(2, nv, 4):
+        B.tube(pt(0, j), pt(nu, j), 0.06, "paint_e8e8e2", 6)
+    for i in (0, nu):
+        c = pt(i, 0)
+        mid = (c[0] + v[0] * b, c[1] + v[1] * b, 4.2)
+        for j in range(nv):
+            B.face([mid, pt(i, j), pt(i, j + 1)], "glass_roof")
+    floor = [(x, y, 4.15) for x, y in offset(P, -0.3)]
+    B.face(floor, "roof_flat")
+    return {"top": 4.2 + rise + 0.5}
+
+
+VILLAGE = ["render_e9b44c", "render_5fa9b3", "render_d97c86", "render_ece0c4", "render_7fb069", "render_c9653a"]
+SIGNS = ["sign_chai", "sign_stores", "sign_sweets", "sign_tailor"]
+
+
+def land_of_the_lions(L, B):
+    """Land of the Lions (2016), the Gir Forest of India: Sasan Gir station with its platform canopy,
+    a broad-gauge track and name boards; a high street of colour-washed shops with corrugated
+    awnings and painted signs; bunting across the street; a ruined Hindu temple in the lions' land;
+    and a tuk-tuk."""
+    rnd = __import__("random").Random(11)
+    A = ccw(ring(L["footprints"][0]))
+    fps = [ccw(ring(f)) for f in L["footprints"][1:]]
+    big = max(range(len(fps)), key=lambda i: abs(area2(fps[i]))) if fps else -1
+    tops = []
+    sign_k = 0
+    for i, P in enumerate(fps):
+        ar = abs(area2(P))
+        if ar < 8:
+            continue
+        if i == big:
+            # Sasan Gir station.
+            B.prism(P, 0, 5.0, "render_f0d9a0", top=True, top_mat="roof_flat")
+            B.prism(offset(P, 0.06), 4.4, 5.0, "paint_b03a2e", top=False)
+            B.prism(offset(P, 0.05), 0, 0.6, "stone", top=False)
+            es = edges_of(P)
+            for a, b, ln, ux, uy, nx, ny in es:
+                for k in range(int(ln // 3.2)):
+                    t = (k + 0.5) * ln / int(ln // 3.2)
+                    arched_window(B, a[0] + ux * t, a[1] + uy * t, ux, uy, nx, ny, 1.1, 0.4, 2.7, ("paint_b03a2e", "paint_3a2a20"))
+            a, b, ln, ux, uy, nx, ny = max(es, key=lambda e: e[2])
+            q = lambda t, out, z: (a[0] + ux * t + nx * out, a[1] + uy * t + ny * out, z)
+            B.face([q(0, 0, 0.6), q(ln, 0, 0.6), q(ln, 3.6, 0.6), q(0, 3.6, 0.6)], "stone")  # platform
+            B.face([q(0, 3.6, 0), q(ln, 3.6, 0), q(ln, 3.6, 0.6), q(0, 3.6, 0.6)], "stone")
+            B.face([q(-0.5, 0, 4.0), q(ln + 0.5, 0, 4.0), q(ln + 0.5, 3.8, 3.4), q(-0.5, 3.8, 3.4)], "corrugated")
+            B.face([q(-0.5, 3.8, 3.36), q(ln + 0.5, 3.8, 3.36), q(ln + 0.5, 0, 3.96), q(-0.5, 0, 3.96)], "paint_2e5e4e")
+            for t in [0.5 + k * (ln - 1) / max(1, int((ln - 1) / 3)) for k in range(int((ln - 1) / 3) + 1)]:
+                p0 = q(t, 3.3, 0.6)
+                B.tube(p0, (p0[0], p0[1], 3.5), 0.07, "paint_2e5e4e", 8)
+            for t in (2.0, ln - 2.0):  # station name boards
+                p0, p1 = q(t - 1.2, 3.2, 2.0), q(t + 1.2, 3.2, 2.0)
+                B.face([p0, p1, (p1[0], p1[1], 2.6), (p0[0], p0[1], 2.6)], "sign_station", uvs=SIGN_UV)
+                for pp in (p0, p1):
+                    B.tube((pp[0], pp[1], 0.6), (pp[0], pp[1], 2.62), 0.04, "paint_2b302d", 6)
+            # Broad-gauge track along the platform.
+            for k in range(int(ln / 0.65)):
+                t = k * 0.65 + 0.3
+                c = q(t, 5.2, 0.08)
+                B.box(c, (0.25, 2.6, 0.14), math.atan2(uy, ux), "timber_dark")
+            for off in (5.2 - 0.84, 5.2 + 0.84):
+                c = q(ln / 2, off, 0.2)
+                B.box(c, (ln, 0.07, 0.14), math.atan2(uy, ux), "steel")
+            B.face([q(0, 3.7, 0.02), q(ln, 3.7, 0.02), q(ln, 6.7, 0.02), q(0, 6.7, 0.02)], "gravel")
+            tops.append(5.0)
+            # A tuk-tuk waiting at the station.
+            tx, ty, _ = q(ln * 0.3, -3.0, 0)
+            yaw = math.atan2(uy, ux)
+            B.box((tx, ty, 0.75), (2.4, 1.3, 0.9), yaw, "paint_f2c230")
+            B.box((tx, ty, 1.9), (2.5, 1.35, 0.08), yaw, "paint_1e1e1e")
+            for sx in (-1, 1):
+                for sy in (-1, 1):
+                    B.tube((tx + math.cos(yaw) * sx * 1.1 - math.sin(yaw) * sy * 0.6, ty + math.sin(yaw) * sx * 1.1 + math.cos(yaw) * sy * 0.6, 1.2),
+                           (tx + math.cos(yaw) * sx * 1.1 - math.sin(yaw) * sy * 0.6, ty + math.sin(yaw) * sx * 1.1 + math.cos(yaw) * sy * 0.6, 1.9), 0.03, "paint_1e1e1e", 6)
+            for sx, sy in ((1.0, 0), (-0.9, 0.55), (-0.9, -0.55)):
+                wx, wy = tx + math.cos(yaw) * sx - math.sin(yaw) * sy, ty + math.sin(yaw) * sx + math.cos(yaw) * sy
+                B.tube((wx - math.sin(yaw) * 0.08, wy + math.cos(yaw) * 0.08, 0.27), (wx + math.sin(yaw) * 0.08, wy - math.cos(yaw) * 0.08, 0.27), 0.27, "paint_1e1e1e", 12)
+            continue
+        # A village shop.
+        h = rnd.choice([3.6, 4.2, 5.4])
+        col = VILLAGE[i % len(VILLAGE)]
+        B.prism(P, 0, h, col, top=True, top_mat="roof_flat")
+        B.prism(offset(P, 0.04), 0, 0.5, "paint_6b5a48", top=False)
+        B.ring_wall(P, h, h + 0.6, 0.2, col)
+        es = edges_of(P)
+        a, b, ln, ux, uy, nx, ny = max(es, key=lambda e: e[2])
+        q = lambda t, out, z: (a[0] + ux * t + nx * out, a[1] + uy * t + ny * out, z)
+        B.face([q(0.2, 0, 2.7), q(ln - 0.2, 0, 2.7), q(ln - 0.2, 1.7, 2.25), q(0.2, 1.7, 2.25)], "corrugated_rust")
+        B.face([q(0.2, 1.7, 2.22), q(ln - 0.2, 1.7, 2.22), q(ln - 0.2, 0, 2.67), q(0.2, 0, 2.67)], "corrugated_rust")
+        for t in (0.4, ln - 0.4):
+            p0 = q(t, 1.6, 0)
+            B.tube(p0, (p0[0], p0[1], 2.3), 0.04, "timber_dark", 6)
+        if ln > 2.5:
+            sw = min(3.0, ln - 0.6)
+            p0, p1 = q(ln / 2 - sw / 2, 0.06, 2.85), q(ln / 2 + sw / 2, 0.06, 2.85)
+            B.face([p0, p1, (p1[0], p1[1], 3.55), (p0[0], p0[1], 3.55)], SIGNS[sign_k % len(SIGNS)], uvs=SIGN_UV)
+            sign_k += 1
+            wall_panel(B, a, ux, uy, nx, ny, ln / 2 - 0.9, ln / 2 + 0.9, 0.2, 2.4, 0.03, "paint_3a2a20")
+        for e in es:
+            ea, eb, eln, eux, euy, enx, eny = e
+            if eln > 2.2 and e[0] != a:
+                wall_panel(B, ea, eux, euy, enx, eny, eln / 2 - 0.45, eln / 2 + 0.45, 1.2, 2.3, 0.03, "paint_3a2a20")
+                for s in (-1, 1):  # painted shutters
+                    wall_panel(B, ea, eux, euy, enx, eny, eln / 2 + s * 0.45 + (0 if s > 0 else -0.45), eln / 2 + s * 0.45 + (0.45 if s > 0 else 0), 1.2, 2.3, 0.05, "paint_2f7fb0")
+        tops.append(h + 0.6)
+    # Bunting across the street between the buildings.
+    cents = [centroid(P) for P in fps if abs(area2(P)) >= 8]
+    flags = ["fabric_e8452c", "fabric_f4c430", "fabric_2e9e5b", "fabric_3b6fd8", "fabric_e85ca0"]
+    for i in range(len(cents)):
+        for j in range(i + 1, len(cents)):
+            (x0, y0), (x1, y1) = cents[i], cents[j]
+            d = math.hypot(x1 - x0, y1 - y0)
+            if not 8 < d < 40:
+                continue
+            n = int(d / 0.55)
+            for k in range(1, n):
+                t = k / n
+                x, y = x0 + (x1 - x0) * t, y0 + (y1 - y0) * t
+                z = 4.6 - math.sin(math.pi * t) * 0.9
+                ux, uy = (x1 - x0) / d, (y1 - y0) / d
+                B.face([(x - ux * 0.16, y - uy * 0.16, z), (x + ux * 0.16, y + uy * 0.16, z), (x, y, z - 0.32)], flags[k % len(flags)])
+    # The ruined Hindu temple in the lions' land.
+    inner = offset(A, -9)
+    tx, ty = centroid(A)
+    for _ in range(60):
+        x, y = rnd.uniform(min(p[0] for p in inner), max(p[0] for p in inner)), rnd.uniform(min(p[1] for p in inner), max(p[1] for p in inner))
+        if inside(inner, x, y) and all(math.hypot(x - c[0], y - c[1]) > 12 for c in cents):
+            tx, ty = x, y
+            break
+    B.box((tx, ty, 0.4), (5.0, 5.0, 0.8), 0.3, "sandstone")
+    B.box((tx, ty, 2.1), (2.8, 2.8, 2.6), 0.3, "sandstone")
+    z, w = 3.4, 2.6
+    while w > 0.5:  # the curving shikhara tower, course by course
+        B.box((tx, ty, z + 0.2), (w, w, 0.4), 0.3, "sandstone")
+        z += 0.4
+        w *= 0.88
+    B.dome((tx, ty, z), 0.55, 0.3, "sandstone", 12, 3)
+    B.tube((tx, ty, z + 0.3), (tx, ty, z + 0.9), 0.06, "gold", 6)
+    for k in range(6):  # fallen stones
+        ang = rnd.uniform(0, 6.28)
+        B.box((tx + math.cos(ang) * rnd.uniform(3.5, 6), ty + math.sin(ang) * rnd.uniform(3.5, 6), 0.25), (rnd.uniform(0.6, 1.2), rnd.uniform(0.4, 0.8), 0.5), ang, "sandstone")
+    return {"top": max(tops + [z + 1])}
+
+
+def tiger_territory(L, B):
+    """Tiger Territory (2013), Indonesian-inspired: a stainless-steel mesh enclosure up to 17 m high
+    on four masts, held by perimeter posts and cables; rustic timber viewing pavilions under steep
+    corrugated roofs."""
+    A = ccw(ring(L["footprints"][0]))
+    (cx, cy), u, v, a, b = axes(A)
+    ring_in = offset(A, -0.4)
+    for x, y in resample(ring_in, 6.0):
+        B.tube((x, y, 0), (x, y, 4.6), 0.08, "alu", 8)
+    peaks = []
+    for s, t, h in ((-0.45, -0.35, 17.0), (-0.4, 0.38, 15.0), (0.42, -0.3, 16.0), (0.45, 0.35, 14.0)):
+        x, y = cx + u[0] * a * s + v[0] * b * t, cy + u[1] * a * s + v[1] * b * t
+        while not inside(A, x, y):
+            x, y = x * 0.8 + cx * 0.2, y * 0.8 + cy * 0.2
+        B.tube((x, y, 0), (x, y, h), 0.22, "alu", 12)
+        peaks.append((x, y, h))
+    tension_net(B, ring_in, peaks, 4.6, reach=22.0)
+    for fi, fp in enumerate(L["footprints"][1:], start=1):
+        P = ccw(ring(fp))
+        B.prism(P, 0, 3.4, "timber_weathered", top=False)
+        B.prism(offset(P, 0.05), 0, 0.4, "stone", top=False)
+        for sk in [r for r in L["roofs"] if r.get("fi") == fi]:
+            B.roof(sk, lambda pts: [(pts, "corrugated")])
+        for x, y in offset(P, 0.6):
+            B.tube((x, y, 0), (x, y, 3.35), 0.12, "timber_dark", 8)
+        for ea, eb, ln, ux, uy, nx, ny in edges_of(P):
+            if ln > 3:
+                wall_panel(B, ea, ux, uy, nx, ny, 0.6, ln - 0.6, 1.0, 2.6, 0.03, "glass")
+    return {"top": 17.5}
+
+
 BUILDERS = {
     "penguin-pool": penguin_pool, "snowdon-aviary": snowdon_aviary, "casson-pavilion": casson_pavilion,
     "clock-tower": clock_tower, "giraffe-house": giraffe_house, "raven-cage": raven_cage,
-    "blackburn-pavilion": blackburn_pavilion,
+    "blackburn-pavilion": blackburn_pavilion, "main-entrance": main_entrance, "reptile-house": reptile_house,
+    "gorilla-kingdom": gorilla_kingdom, "rainforest-life": rainforest_life, "land-of-the-lions": land_of_the_lions,
+    "tiger-territory": tiger_territory,
 }
-BEVEL = {"penguin-pool": 0.03, "casson-pavilion": 0.03, "giraffe-house": 0.02, "clock-tower": 0.015, "blackburn-pavilion": 0.02}
+BEVEL = {"penguin-pool": 0.03, "casson-pavilion": 0.03, "giraffe-house": 0.02, "clock-tower": 0.015, "blackburn-pavilion": 0.02,
+         "reptile-house": 0.02}
 
 
 def main():
@@ -589,7 +1019,7 @@ def main():
         log(f"{L['id']}: {len(obj.data.vertices)} verts, ~{tris} tris, materials {B.names} -> {os.path.getsize(path) // 1024} KB")
         index[L["id"]] = {
             "id": L["id"], "name": L["name"], "url": f"assets/landmarks/{L['id']}.glb", "origin": L["origin"],
-            "replaces": [] if L["id"] == "snowdon-aviary" else [L["name"]], "top": round(info["top"], 2),
+            "replaces": L.get("replaces", []), "top": round(info["top"], 2),
         }
         bpy.data.objects.remove(obj)
     json.dump(list(index.values()), open(index_path, "w"), indent=1)

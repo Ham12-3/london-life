@@ -4,6 +4,7 @@
 import * as THREE from "three/webgpu";
 import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
 import { pbr } from "./materials.js";
+import { waterMaterial } from "./water.js";
 
 export async function loadLandmarkIndex() {
   try {
@@ -101,18 +102,62 @@ function landmarkMaterials() {
     gold: std({ color: 0xd8aa46, roughness: 0.3, metalness: 1 }),
     iron: std({ color: 0x1e2723, roughness: 0.5, metalness: 0.5 }),
   };
+  Object.assign(materials, {
+    brick_brown: pbr("brick_wall_02", { tile: 2, tint: 0x8a6a62 }),
+    tiles_dark: pbr("roof_slates_02", { tile: 2, uv: "mesh", tint: 0x8a8a90, side: THREE.DoubleSide }),
+    timber_weathered: pbr("wood_plank_wall", { tile: 2.5, tint: 0xc8bba8 }),
+    thatch: pbr("reed_roof_04", { tile: 2.5, side: THREE.DoubleSide }),
+    corrugated: pbr("corrugated_iron_02", { tile: 2, side: THREE.DoubleSide }),
+    corrugated_rust: pbr("rusty_corrugated_iron", { tile: 2, side: THREE.DoubleSide }),
+    sandstone: pbr("red_sandstone_wall", { tile: 2.5 }),
+    rock: pbr("aerial_rocks_02", { tile: 3 }),
+    gravel: pbr("gravel_ground_01", { tile: 2.5 }),
+    roof_flat: pbr("concrete_floor_02", { tile: 3, tint: 0x8e8a84 }),
+    frame_white: std({ color: 0xefeee8, roughness: 0.5 }),
+    steel: std({ color: 0x8a8d90, roughness: 0.35, metalness: 0.9 }),
+    rope: std({ color: 0x8a7558, roughness: 0.9 }),
+    water: waterMaterial(),
+  });
   return materials;
+}
+
+// Materials named by pattern: render_<hex> (painted render), paint_<hex> (gloss paint),
+// fabric_<hex> (awnings, bunting, banners), sign_*/banner_*/shutter (painted images).
+const loader = new THREE.TextureLoader();
+function imageMaterial(name) {
+  const t = loader.load(`assets/landmarks/textures/${name}.png`);
+  t.colorSpace = THREE.SRGBColorSpace;
+  t.anisotropy = 8;
+  t.flipY = false; // glTF UVs run from the top of the image
+  if (name === "shutter") t.wrapS = t.wrapT = THREE.RepeatWrapping;
+  return new THREE.MeshStandardMaterial({ map: t, roughness: 0.6, side: THREE.DoubleSide });
+}
+function materialFor(name) {
+  const mats = landmarkMaterials();
+  const base = name.replace(/\.\d+$/, "");
+  if (mats[base]) return mats[base];
+  const m = base.match(/^(render|paint|fabric)_([0-9a-f]{6})$/);
+  let made = null;
+  if (m) {
+    const c = parseInt(m[2], 16);
+    if (m[1] === "render") made = pbr("white_stucco", { tile: 3, tint: c, normalScale: 0.7 });
+    else if (m[1] === "paint") made = new THREE.MeshStandardMaterial({ color: c, roughness: 0.45 });
+    else made = new THREE.MeshStandardMaterial({ color: c, roughness: 0.85, side: THREE.DoubleSide });
+  } else if (/^(sign_|banner_|shutter)/.test(base)) {
+    made = imageMaterial(base);
+  }
+  if (made) mats[base] = made;
+  return made;
 }
 
 export async function addLandmarks(index, scene) {
   const loader = new GLTFLoader();
-  const mats = landmarkMaterials();
   const groups = await Promise.all(index.map(async (L) => {
     try {
       const gltf = await loader.loadAsync(L.url);
       gltf.scene.traverse((o) => {
         if (!o.isMesh) return;
-        const swap = (m) => mats[m.name] || m;
+        const swap = (m) => materialFor(m.name) || m;
         o.material = Array.isArray(o.material) ? o.material.map(swap) : swap(o.material);
         o.castShadow = o.receiveShadow = true;
       });

@@ -87,5 +87,88 @@
    "Blackburn Pavilion"
   ],
   "top": 14.09
+ },
+ {
+  "id": "main-entrance",
+  "name": "London Zoo Entrance",
+  "url": "assets/landmarks/main-entrance.glb",
+  "origin": [
+   -40.10296296296296,
+   -40.36925925925925
+  ],
+  "replaces": [
+   "London Zoo Entrance"
+  ],
+  "top": 8.6
+ },
+ {
+  "id": "reptile-house",
+  "name": "Reptile House",
+  "url": "assets/landmarks/reptile-house.glb",
+  "origin": [
+   -45.655102040816324,
+   32.600204081632654
+  ],
+  "replaces": [
+   "b133"
+  ],
+  "top": 13.8
+ },
+ {
+  "id": "gorilla-kingdom",
+  "name": "Gorilla Kingdom",
+  "url": "assets/landmarks/gorilla-kingdom.glb",
+  "origin": [
+   11.676842105263157,
+   -4.877368421052631
+  ],
+  "replaces": [
+   "b4",
+   "b144"
+  ],
+  "top": 8.5
+ },
+ {
+  "id": "rainforest-life",
+  "name": "Rainforest Life",
+  "url": "assets/landmarks/rainforest-life.glb",
+  "origin": [
+   -11.423333333333336,
+   -110.48555555555556
+  ],
+  "replaces": [
+   "b184"
+  ],
+  "top": 13.2
+ },
+ {
+  "id": "land-of-the-lions",
+  "name": "Land of the Lions",
+  "url": "assets/landmarks/land-of-the-lions.glb",
+  "origin": [
+   176.24476923076918,
+   133.56153846153848
+  ],
+  "replaces": [
+   "b108",
+   "b110",
+   "b111",
+   "b112",
+   "b131"
+  ],
+  "top": 9.6
+ },
+ {
+  "id": "tiger-territory",
+  "name": "Tiger Territory",
+  "url": "assets/landmarks/tiger-territory.glb",
+  "origin": [
+   -4.54068493150685,
+   94.50643835616442
+  ],
+  "replaces": [
+   "b26"
+  ],
+  "top": 17.5
  }
 ]

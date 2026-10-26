@@ -384,7 +384,7 @@ export function buildWorld(world, scene, { hiddenBuildings = new Set(), captured
     const ring = b.pts;
     const id = b.name || `b${bi}`;
     // A landmark model replaces this building: its walls stay solid (the model has no doorways cut).
-    const landmark = landmarkTops.has(b.name);
+    const landmark = landmarkTops.has(id); // ids: the building's name, or b<index> if it has none
     const doors = landmark ? [] : [...b.doors];
     if (b.inZoo && !landmark && doors.length === 0) {
       // No mapped entrance: open the edge facing the nearest path.
@@ -404,7 +404,7 @@ export function buildWorld(world, scene, { hiddenBuildings = new Set(), captured
     const finish = wallGeos[b.inZoo ? "render" : WALL_FINISH[color] || "render"];
     // Buildings inside a captured enclosure are part of its splat; keep their walls for collision only.
     // Drawn elsewhere (a landmark or the Blender-modelled buildings): keep only the collision walls.
-    const hidden = blenderBuildings || hiddenBuildings.has(b.name) || inCaptured(...centreOf(ring.slice(0, -1)));
+    const hidden = blenderBuildings || hiddenBuildings.has(id) || inCaptured(...centreOf(ring.slice(0, -1)));
     const edges = [];
     for (let i = 0; i < ring.length - 1; i++) {
       const a = ring[i], c = ring[i + 1];
@@ -419,7 +419,7 @@ export function buildWorld(world, scene, { hiddenBuildings = new Set(), captured
         for (const [p, q] of gaps) finish.push(paint(wallBox(p[0], p[1], q[0], q[1], DOOR_HEIGHT, b.h, WALL_THICKNESS), color));
     }
     // Plinth, cornice or parapet, windows, door surrounds and (often) a pitched roof: see buildings.js.
-    const style = hidden ? { roof: "flat", top: landmarkTops.get(b.name) ?? (blenderBuildings ? b.h + 3 : b.h) } : detail.add(b, id, edges, finish, color);
+    const style = hidden ? { roof: "flat", top: landmarkTops.get(id) ?? (blenderBuildings ? b.h + 3 : b.h) } : detail.add(b, id, edges, finish, color);
     if (!hidden) {
       try {
         if (style.roof === "flat") roofGeos.push(paint(flatShape(ring, b.h), b.kind === "cage" ? 0x3a3f3a : 0x5c5852));

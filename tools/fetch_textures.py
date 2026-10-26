@@ -31,6 +31,14 @@ TEXTURES = [
     "wood_planks",          # bridges
     "roof_slates_02",       # slate roofs on houses and small zoo buildings
     "clay_roof_tiles",      # clay tile roofs on pavilions and kiosks
+    "corrugated_iron_02",   # canopies and roofs (Tiger Territory, Land of the Lions)
+    "rusty_corrugated_iron",  # village roofs in Land of the Lions
+    "reed_roof_04",         # thatch (Gorilla Kingdom)
+    "red_sandstone_wall",   # the Hindu temple in Land of the Lions
+    "red_plaster_weathered",  # weathered village walls
+    "blue_plaster_weathered",
+    "old_sandstone_02",     # stone dressings
+    "wood_plank_wall",      # weathered timber pavilions
 ]
 MAPS = {"diff": "Diffuse", "nor": "nor_gl", "arm": "arm"}
 EXTRA = {

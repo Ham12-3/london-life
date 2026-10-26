@@ -79,8 +79,8 @@ await SkeletonBuilder.init();
 const out = [];
 let pitched = 0;
 for (const [bi, b] of world.buildings.entries()) {
-  if (replaced.has(b.name)) continue;
-  const id = b.name || `b${bi}`;
+  const id = b.name || `b${bi}`; // as world.js
+  if (replaced.has(id)) continue;
   const r = fnv(id) / 4294967296;
   const palette = b.inZoo ? ZOO_PALETTE : WALL_PALETTE;
   const color = palette[fnv(id) % palette.length];

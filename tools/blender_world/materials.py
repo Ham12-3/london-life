@@ -158,6 +158,51 @@ MATERIALS.update({
 })
 
 
+MATERIALS.update({
+    "brick_brown": lambda: pbr("brick_brown", "brick_wall_02", 2, tint=srgb(0x8a6a62)),
+    "tiles_dark": lambda: pbr("tiles_dark", "roof_slates_02", 2, tint=srgb(0x8a8a90), uv=True),
+    "timber_weathered": lambda: pbr("timber_weathered", "wood_plank_wall", 2.5, tint=srgb(0xc8bba8)),
+    "thatch": lambda: pbr("thatch", "reed_roof_04", 2.5),
+    "corrugated": lambda: pbr("corrugated", "corrugated_iron_02", 2),
+    "corrugated_rust": lambda: pbr("corrugated_rust", "rusty_corrugated_iron", 2),
+    "sandstone": lambda: pbr("sandstone", "red_sandstone_wall", 2.5),
+    "steel": lambda: plain("steel", srgb(0x8a8d90), rough=0.35, metal=0.9),
+    "rope": lambda: plain("rope", srgb(0x8a7558), rough=0.9),
+})
+
+
+def picture(name):
+    """Painted sign or banner from public/assets/landmarks/textures, on the mesh's UVs."""
+    m = bpy.data.materials.get(name) or bpy.data.materials.new(name)
+    m.use_nodes = True
+    nt = m.node_tree
+    nt.nodes.clear()
+    bsdf = nt.nodes.new("ShaderNodeBsdfPrincipled")
+    nt.links.new(bsdf.outputs[0], nt.nodes.new("ShaderNodeOutputMaterial").inputs[0])
+    tex = nt.nodes.new("ShaderNodeTexImage")
+    tex.image = bpy.data.images.load(os.path.join(ROOT, "public", "assets", "landmarks", "textures", name + ".png"), check_existing=True)
+    nt.links.new(nt.nodes.new("ShaderNodeTexCoord").outputs["UV"], tex.inputs[0])
+    nt.links.new(tex.outputs[0], bsdf.inputs["Base Color"])
+    bsdf.inputs["Roughness"].default_value = 0.6
+    return m
+
+
+def landmark(name):
+    """Material for a landmark surface name, including render_/paint_/fabric_<hex> and pictures."""
+    # Imported GLBs bring placeholder materials with these same names, so (re)build them every time.
+    if name in MATERIALS:
+        return MATERIALS[name]()
+    kind, _, hexcol = name.partition("_")
+    if kind in ("render", "paint", "fabric") and len(hexcol) == 6:
+        c = srgb(int(hexcol, 16))
+        if kind == "render":
+            return pbr(name, "white_stucco", 3, tint=c)
+        return plain(name, c, rough=0.45 if kind == "paint" else 0.85)
+    if name.startswith(("sign_", "banner_", "shutter")):
+        return picture(name)
+    return None
+
+
 def ensure_all():
     for f in MATERIALS.values():
         f()

@@ -150,8 +150,9 @@ for L in landmarks:
         if o.type == "MESH":
             for slot in o.material_slots:
                 base = slot.material.name.split(".")[0] if slot.material else None
-                if base in bpy.data.materials and slot.material.name != base:
-                    slot.material = bpy.data.materials[base]
+                m = mats.landmark(base) if base else None
+                if m:
+                    slot.material = m
 
 # Trees: one shared trunk-and-crown mesh, linked copies at every mapped tree.
 T = Builder()
