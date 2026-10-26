@@ -10,6 +10,7 @@ import { createGrass, GRASS_AMOUNT } from "./grass.js";
 import { initBuildingDetail } from "./buildings.js";
 import { loadLandmarkIndex, addLandmarks } from "./landmarks.js";
 import { hasBlenderBuildings, addBlenderBuildings } from "./blenderworld.js";
+import { hasFurniture, addFurniture } from "./furniture.js";
 
 const status = document.getElementById("status");
 const qualityChip = document.getElementById("quality");
@@ -24,8 +25,8 @@ const scene = new THREE.Scene();
 const camera = new THREE.PerspectiveCamera(70, innerWidth / innerHeight, 0.1, 3000);
 const { sun } = setupAtmosphere(renderer, scene);
 
-const [world, manifest, landmarkIndex, blenderBuildings] = await Promise.all([
-  fetch("world.json").then((r) => r.json()), loadManifest(), loadLandmarkIndex(), hasBlenderBuildings(), initBuildingDetail(),
+const [world, manifest, landmarkIndex, blenderBuildings, realFurniture] = await Promise.all([
+  fetch("world.json").then((r) => r.json()), loadManifest(), loadLandmarkIndex(), hasBlenderBuildings(), hasFurniture(), initBuildingDetail(),
 ]);
 const items = (manifest.items || []).filter((i) => SHOW_SPLATS || i.type !== "splat");
 const hiddenBuildings = new Set(items.filter((i) => i.replacesBuilding).map((i) => i.anchor));
@@ -39,12 +40,14 @@ world.clear = landmarkIndex.flatMap((L) => L.clear || []);
 world.solid = landmarkIndex.flatMap((L) => L.solid || []);
 const replacedSpecies = new Set(items.filter((i) => i.species).map((i) => i.species));
 const capturedPlaces = new Set(items.filter((i) => i.type === "splat").map((i) => i.anchor));
-const info = buildWorld(world, scene, { hiddenBuildings, capturedPlaces, landmarkTops, blenderBuildings });
+const info = buildWorld(world, scene, { hiddenBuildings, capturedPlaces, landmarkTops, blenderBuildings, realFurniture });
 await addLandmarks(landmarkIndex, scene);
 // Buildings modelled in Blender replace the generated ones when they've been exported.
 if (blenderBuildings) await addBlenderBuildings(scene);
+// Benches, bins, lamp posts and railings modelled in Blender.
+const furniture = realFurniture ? await addFurniture(scene, info.collision) : { update() {} };
 const zooAnimals = await spawnAnimals(world, scene, { replacedSpecies, capturedPlaces });
-const trees = createTrees(info.trees, scene, renderer);
+const trees = await createTrees(info.trees, scene, renderer);
 const grass = createGrass(world, scene);
 
 const player = new Player(camera, renderer.domElement, info.collision);
@@ -98,6 +101,7 @@ renderer.setAnimationLoop(() => {
     l.visible = d2 > labelNear * labelNear && d2 < labelFar * labelFar;
   }
   trees.update(p);
+  furniture.update(p);
   grass.update(p);
   assets.update(p);
   hud.update();

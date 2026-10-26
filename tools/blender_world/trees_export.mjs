@@ -19,9 +19,11 @@ const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..")
 const out = path.join(root, "work/blender/trees");
 fs.mkdirSync(out, { recursive: true });
 
+// Same as src/trees.js, including the London plane (last).
 const VARIANTS = [
   ["Oak Medium", 35729], ["Oak Large", 1201], ["Ash Medium", 5521],
   ["Ash Large", 777], ["Aspen Medium", 4242], ["Oak Medium", 9001],
+  ["Oak Large", 4321, "plane"],
 ];
 
 function saveImage(tex, name) {
@@ -41,10 +43,16 @@ const dump = (g) => ({
   index: Array.from(g.index.array),
 });
 
-const variants = VARIANTS.map(([preset, seed], i) => {
+const variants = VARIANTS.map(([preset, seed, kind], i) => {
   const tree = new Tree();
   tree.loadPreset(preset);
   tree.options.seed = seed;
+  if (kind === "plane") {
+    tree.options.branch.length[0] *= 1.25;
+    tree.options.leaves.size *= 1.25;
+    tree.options.leaves.tint = 0xffffff;
+    tree.options.bark.tint = 0xffffff;
+  }
   tree.options.leaves.count = Math.max(4, Math.round(tree.options.leaves.count * 0.45));
   tree.options.leaves.size *= 1.45;
   tree.generate();
@@ -59,6 +67,18 @@ const variants = VARIANTS.map(([preset, seed], i) => {
   }
   const bm = tree.branchesMesh.material, lm = tree.leavesMesh.material;
   const bark = tree.options.bark.type, leaf = tree.options.leaves.type;
+  if (kind === "plane") {
+    // Scanned plane bark (Poly Haven) and the painted plane-leaf sprig.
+    fs.copyFileSync(path.join(root, "public/assets/textures/bark_platanus/diff.jpg"), path.join(out, "bark_plane_color.jpg"));
+    fs.copyFileSync(path.join(root, "public/assets/textures/bark_platanus/nor.jpg"), path.join(out, "bark_plane_normal.jpg"));
+    fs.copyFileSync(path.join(root, "public/assets/trees/leaf_plane.png"), path.join(out, "leaf_plane.png"));
+    return {
+      name: `london_plane_${i}`, plane: true,
+      branches: dump(branches), leaves: dump(leaves),
+      bark: { color: "bark_plane_color.jpg", normal: "bark_plane_normal.jpg", tint: 0xffffff, repeat: [1, 0.5] },
+      leaf: { color: "leaf_plane.png", tint: 0xffffff, alphaTest: lm.alphaTest },
+    };
+  }
   return {
     name: `${preset.toLowerCase().replace(" ", "_")}_${i}`,
     branches: dump(branches),

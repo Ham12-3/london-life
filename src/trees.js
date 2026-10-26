@@ -1,4 +1,4 @@
-// Trees: procedural Ez-Tree oaks, ashes and aspens near the walker, swaying in the wind; baked
+// Trees: procedural Ez-Tree London planes, oaks, ashes and aspens near the walker, swaying in the wind; baked
 // impostor cards of the same trees further out. Each species variant is generated once and
 // instanced, and trees swap between the two every few metres you walk.
 import * as THREE from "three/webgpu";
@@ -6,11 +6,16 @@ import { positionLocal, positionGeometry, time, sin, cos, vec3, vec4, float, ins
 import { mergeGeometries } from "three/addons/utils/BufferGeometryUtils.js";
 import { Tree } from "@dgreenheck/ez-tree";
 
-// Preset, seed. Heights are normalised, so the preset size only sets the shape.
+// Preset, seed, kind. Heights are normalised, so the preset size only sets the shape. The London
+// plane (the commonest tree in the zoo and the park) is an Ez-Tree oak grown taller in the trunk and
+// broader in the leaf, dressed in scanned plane bark (Poly Haven) and a painted plane-leaf sprig.
 const VARIANTS = [
   ["Oak Medium", 35729], ["Oak Large", 1201], ["Ash Medium", 5521],
   ["Ash Large", 777], ["Aspen Medium", 4242], ["Oak Medium", 9001],
+  ["Oak Large", 4321, "plane"],
 ];
+export const PLANE_SHARE = 0.4; // of the mapped trees
+const PLANE = VARIANTS.length - 1;
 // Detailed trees within this distance (metres), by quality level.
 export const TREE_RANGE = { high: 90, medium: 65, low: 40 };
 
@@ -31,10 +36,16 @@ function swayNode(leaf) {
   return positionLocal.add(vec3(dx, float(0), dz).mul(14)); // ~14 m: a typical tree's height
 }
 
-function buildVariant([preset, seed]) {
+function buildVariant([preset, seed, kind], textures) {
   const tree = new Tree();
   tree.loadPreset(preset);
   tree.options.seed = seed;
+  if (kind === "plane") {
+    tree.options.branch.length[0] *= 1.25; // a long clear trunk under a high, broad crown
+    tree.options.leaves.size *= 1.25;
+    tree.options.leaves.tint = 0xffffff;
+    tree.options.bark.tint = 0xffffff;
+  }
   // Fewer, larger leaf cards: nearly the same silhouette for well under half the triangles.
   tree.options.leaves.count = Math.max(4, Math.round(tree.options.leaves.count * 0.45));
   tree.options.leaves.size *= 1.45;
@@ -51,6 +62,12 @@ function buildVariant([preset, seed]) {
   }
 
   const bm = tree.branchesMesh.material, lm = tree.leavesMesh.material;
+  if (kind === "plane") {
+    bm.map = textures.planeBark;
+    bm.normalMap = textures.planeBarkNormal;
+    bm.aoMap = bm.roughnessMap = null;
+    lm.map = textures.planeLeaf;
+  }
   const bark = new THREE.MeshStandardNodeMaterial({
     map: bm.map, normalMap: bm.normalMap, aoMap: bm.aoMap, roughnessMap: bm.roughnessMap, color: bm.color, roughness: 1,
   });
@@ -96,8 +113,24 @@ function bakeImpostor(renderer, v) {
   return { geo, mat };
 }
 
-export function createTrees(trees, scene, renderer) {
-  const variants = VARIANTS.map(buildVariant);
+async function loadTextures() {
+  const loader = new THREE.TextureLoader();
+  const [planeBark, planeBarkNormal, planeLeaf] = await Promise.all([
+    loader.loadAsync("assets/textures/bark_platanus/diff.jpg"),
+    loader.loadAsync("assets/textures/bark_platanus/nor.jpg"),
+    loader.loadAsync("assets/trees/leaf_plane.png"),
+  ]);
+  for (const t of [planeBark, planeBarkNormal]) {
+    t.wrapS = t.wrapT = THREE.RepeatWrapping;
+    t.repeat.set(1, 0.5);
+  }
+  planeBark.colorSpace = planeLeaf.colorSpace = THREE.SRGBColorSpace;
+  return { planeBark, planeBarkNormal, planeLeaf };
+}
+
+export async function createTrees(trees, scene, renderer) {
+  const textures = await loadTextures(); // before the impostors are baked from these trees
+  const variants = VARIANTS.map((v) => buildVariant(v, textures));
   const meshes = variants.map((v) => {
     const b = new THREE.InstancedMesh(v.branches, v.bark, trees.length);
     const l = new THREE.InstancedMesh(v.leaves, v.leaf, trees.length);
@@ -120,7 +153,8 @@ export function createTrees(trees, scene, renderer) {
     const r = Math.abs(Math.sin(x * 12.9898 + z * 78.233)) % 1;
     const height = h * (0.9 + r * 0.25);
     const matrix = m4.compose(pos.set(x, 0, z), q.setFromAxisAngle(up, r * 6.28), sc.set(height, height, height)).clone();
-    return { x, z, matrix, variant: i % variants.length };
+    // London planes for 40% of trees; the rest cycle through the other species.
+    return { x, z, matrix, variant: (Math.abs(Math.sin(x * 4.17 + z * 9.31)) % 1) < PLANE_SHARE ? PLANE : i % PLANE };
   });
 
   let lastX = Infinity, lastZ = Infinity, range = TREE_RANGE.medium;

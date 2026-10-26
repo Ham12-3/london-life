@@ -39,6 +39,7 @@ TEXTURES = [
     "blue_plaster_weathered",
     "old_sandstone_02",     # stone dressings
     "wood_plank_wall",      # weathered timber pavilions
+    "bark_platanus",        # London plane bark: the camouflage-patched trunks all over the zoo and park
 ]
 MAPS = {"diff": "Diffuse", "nor": "nor_gl", "arm": "arm"}
 EXTRA = {

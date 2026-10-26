@@ -48,6 +48,7 @@ Add `?gpu` to the URL to turn on GPU timers (`zoo.renderer.info.render.timestamp
 | `src/water.js` | Ponds and canal: drifting ripples with sky reflections |
 | `tools/fetch_textures.py` | Downloads the CC0 Poly Haven textures (1k) and the three.js water normal map |
 | `src/animals.js` | Animals per enclosure: Blender models, one instanced draw per species, legs swung on the GPU as they walk |
+| `src/furniture.js` | Blender-modelled benches, bins, Victorian lamp posts, fountains, picnic tables, cycle stands (instanced) and railings (drawn within 70 m) |
 | `src/landmarks.js` | Loads the Blender landmark models and gives their surfaces the zoo's PBR materials |
 | `src/player.js` | First-person controller and collision |
 | `src/hud.js` | Location readout, minimap, full map, places search |
@@ -67,6 +68,9 @@ runs through its `blender-launcher` alias).
 | `tools/landmarks/build.py` | Models the Outer Circle main entrance (lodges, turnstiles, canopy and LONDON ZOO fascia), the 1927 Reptile House, Gorilla Kingdom, Rainforest Life, Land of the Lions (Sasan Gir station, high street, temple), Tiger Territory (mesh canopy on masts), the Mappin Terraces (concrete cast as rock), Guy the Gorilla in bronze, the Lubetkin Penguin Pool, Snowdon Aviary, Casson Pavilion, Clock Tower, Giraffe House, Raven Cage and Blackburn Pavilion on their footprints; writes `public/assets/landmarks/*.glb` and `landmarks.json` |
 | `tools/landmarks/signs.py` | Paints the signs, banners and entrance mosaics the landmarks use (`public/assets/landmarks/textures/`) |
 | `tools/animals/build.py` | 23 species built with Blender's Skin modifier, coats painted into vertex colours; writes `public/assets/animals/*.glb` and `animals.json` (leg joints for the walk cycle) |
+| `tools/furniture/build.py` | Models the street furniture and a 2.5 m railing section in Blender; writes `public/assets/furniture/*.glb` |
+| `tools/furniture/place.py` | Where it all goes: mapped items plus lamps, benches and bins along the paths, railings along every fence (`placements.json`) |
+| `tools/trees/plane_leaf.py` | Paints the London plane leaf sprig for the plane trees (which also use Poly Haven's scanned plane bark) |
 | `tools/animals/preview.py` | Renders all animals side by side to `work/animals_preview.png` |
 
 ```bash
@@ -93,6 +97,7 @@ zoo is built and refined inside Blender, and the buildings are exported back to 
 | `tools/blender_world/trees_export.mjs`, `trees.py` | The web app's Ez-Tree trees, with bark and leaf textures, at every mapped tree |
 | `tools/blender_world/materials.py` | Poly Haven materials in Blender; `render_settings.py` (Eevee ray tracing), `camera.py`, `view.py` |
 | `tools/blender_world/landmarks_reload.py` | Reloads rebuilt landmark models into the Blender zoo without rebuilding the scene |
+| `tools/blender_world/furniture.py` | Places the furniture and railings in the Blender zoo from the same placements |
 | `tools/blender_world/export.py` | Writes `public/assets/blender/buildings.glb` (Draco); the app then uses it instead of generating buildings |
 
 ```bash

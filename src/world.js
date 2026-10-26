@@ -273,7 +273,7 @@ export function makeLabel(text, { size = 28, color = "#fff", bg = "rgba(20,30,25
 
 // ---------- world ----------
 
-export function buildWorld(world, scene, { hiddenBuildings = new Set(), capturedPlaces = new Set(), landmarkTops = new Map(), blenderBuildings = false } = {}) {
+export function buildWorld(world, scene, { hiddenBuildings = new Set(), capturedPlaces = new Set(), landmarkTops = new Map(), blenderBuildings = false, realFurniture = false } = {}) {
   const col = new Collision();
   const labels = [];
 
@@ -485,7 +485,8 @@ export function buildWorld(world, scene, { hiddenBuildings = new Set(), captured
       }
     }
   }
-  if (fenceGeos.length) {
+  // (With the Blender furniture set, furniture.js draws real railings instead; the collision stays.)
+  if (fenceGeos.length && !realFurniture) {
     const fences = new THREE.Mesh(mergeGeometries(fenceGeos),
       new THREE.MeshStandardMaterial({ map: railing, alphaTest: 0.5, side: THREE.DoubleSide, roughness: 0.6, metalness: 0.4 }));
     fences.castShadow = true;
@@ -524,6 +525,7 @@ export function buildWorld(world, scene, { hiddenBuildings = new Set(), captured
     info: { geo: new THREE.BoxGeometry(1.2, 2, 0.15).translate(0, 1, 0), color: 0x2f5d50, r: 0.3 },
   };
   for (const [kind, spec] of Object.entries(furnitureKinds)) {
+    if (realFurniture && kind !== "info") continue; // modelled in Blender: see furniture.js
     const items = world.furniture.filter((f) => f.kind === kind);
     if (!items.length) continue;
     const mesh = new THREE.InstancedMesh(spec.geo, new THREE.MeshStandardMaterial({ color: spec.color, roughness: 0.8 }), items.length);

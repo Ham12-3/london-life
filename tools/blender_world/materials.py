@@ -169,6 +169,10 @@ MATERIALS.update({
     "steel": lambda: plain("steel", srgb(0x8a8d90), rough=0.35, metal=0.9),
     "rope": lambda: plain("rope", srgb(0x8a7558), rough=0.9),
     "bronze": lambda: plain("bronze", srgb(0x5a4632), rough=0.38, metal=1.0),
+    "iron_railing": lambda: plain("iron_railing", srgb(0x141816), rough=0.5, metal=0.5),
+    "timber_bench": lambda: pbr("timber_bench", "wood_planks", 1.2, tint=srgb(0xb89a78)),
+    "bin_green": lambda: plain("bin_green", srgb(0x1f3a2b), rough=0.4, metal=0.3),
+    "lamp_glass": lambda: plain("lamp_glass", srgb(0xf2e6c8), rough=0.15),
     "rock_face": lambda: pbr("rock_face", "concrete_floor_02", 3, tint=srgb(0xd8d2c4)),
     "ledge": lambda: pbr("ledge", "concrete_floor_02", 3, tint=srgb(0xb0aa98)),
 })

@@ -131,10 +131,14 @@ trees_col = bpy.data.collections["Trees"]
 for o in list(trees_col.objects):
     bpy.data.objects.remove(o, do_unlink=True)
 meshes = [make_mesh(v) for v in variants]
+plane = next((k for k, v in enumerate(variants) if v.get("plane")), None)
+others = [k for k in range(len(variants)) if k != plane]
 for i, (x, z, h) in enumerate(world["trees"]):
     r = abs(math.sin(x * 12.9898 + z * 78.233)) % 1
     height = h * (0.9 + r * 0.25)
-    o = bpy.data.objects.new(f"Tree.{i:03d}", meshes[i % len(meshes)])
+    # London planes for 40% of trees, the rest cycling the other species: the web app's rule.
+    v = plane if plane is not None and abs(math.sin(x * 4.17 + z * 9.31)) % 1 < 0.4 else others[i % len(others)]
+    o = bpy.data.objects.new(f"Tree.{i:03d}", meshes[v])
     o.location = (x, -z, 0)
     o.scale = (height, height, height)
     o.rotation_euler = (0, 0, r * 6.28)
