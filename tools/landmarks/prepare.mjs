@@ -40,6 +40,17 @@ const LANDMARKS = [
   // The Mappin Terraces (1914): mapped as a cluster of bare-rock outlines behind the Mappin Pavilion.
   { id: "mappin-terraces", ground: "rock", box: [-165, -55, 0, 70], label: "Mappin Terraces" },
   { id: "guy-the-gorilla", poi: "Guy the Gorilla" },
+  // Step 5: the remaining animal houses. `add` appends buildings (by name or index) to an area's
+  // footprints; `pools` brings the mapped water inside the area.
+  { id: "penguin-beach", area: "Penguin Beach", add: ["The Beach Hut"], pools: true },
+  { id: "butterfly-paradise", ids: [132], label: "Butterfly Paradise" },
+  { id: "tiny-giants", ids: [119], label: "Tiny Giants" },
+  { id: "in-with-the-monkeys", area: "In with the Monkeys", add: [155, 156, 158] },
+  { id: "komodo-dragon-house", ids: [27], label: "Attenborough Komodo Dragon House" },
+  { id: "giants-of-the-galapagos", building: "Giants of the Galápagos" },
+  { id: "gir-lion-lodges", ids: [127, 126, 171, 172, 173, 174, 175, 176, 177], label: "Gir Lion Lodges",
+    roofsAll: [2.9, 24, 0.5], roofFirst: true },
+  { id: "mappin-pavilion", building: "Mappin Pavilion", roofs: [[0, 6.4, 28, 0.7]] },
 ];
 
 const centroid = (r) => [r.slice(0, -1).reduce((s, p) => s + p[0], 0) / (r.length - 1), r.slice(0, -1).reduce((s, p) => s + p[1], 0) / (r.length - 1)];
@@ -127,6 +138,11 @@ for (const L of LANDMARKS) {
     src.sort((a, b) => Math.abs(area(b.pts)) - Math.abs(area(a.pts))); // main footprint first
     replaces = L.area ? [] : [...new Set(src.map(idOf))];
   }
+  if (L.add) {
+    const blds = L.add.map((k) => (typeof k === "number" ? world.buildings[k] : world.buildings.find((b) => b.name === k)));
+    src = [...src, ...blds.filter(Boolean)];
+    replaces = [...replaces, ...blds.filter(Boolean).map(idOf)];
+  }
   const main = src[0].pts;
   const cx = main.slice(0, -1).reduce((s, p) => s + p[0], 0) / (main.length - 1);
   const cz = main.slice(0, -1).reduce((s, p) => s + p[1], 0) / (main.length - 1);
@@ -136,14 +152,16 @@ for (const L of LANDMARKS) {
     return r;
   });
   const roofSpecs = [...(L.roofs || [])];
-  if (L.roofsAll) for (let fi = 1; fi < footprints.length; fi++) roofSpecs.push([fi, ...L.roofsAll]);
+  if (L.roofsAll) for (let fi = L.roofFirst ? 0 : 1; fi < footprints.length; fi++) roofSpecs.push([fi, ...L.roofsAll]);
+  const local = (pts) => { let r = pts.map(([x, z]) => [+(x - cx).toFixed(3), +(-(z - cz)).toFixed(3)]); return area(r) < 0 ? r.reverse() : r; };
+  const pools = L.pools ? world.water.filter((w) => w.pts && inside(src[0].pts, ...centroid(w.pts))).map((w) => local(w.pts)) : undefined;
   const roofs = roofSpecs.map(([fi, eave, pitch, overhang]) => {
     const ring = offsetRing(simplify(footprints[fi]), overhang);
     const sk = SkeletonBuilder.buildFromPolygon([ring]);
     if (!sk) { console.warn(`${L.id}: no skeleton for footprint ${fi}`); return null; }
     return { fi, eave, slope: Math.tan((pitch * Math.PI) / 180), vertices: sk.vertices, polygons: sk.polygons };
   }).filter(Boolean);
-  out.push({ id: L.id, name: L.label || L.building || L.area, origin: [cx, cz], footprints, roofs, replaces });
+  out.push({ id: L.id, name: L.label || L.building || L.area, origin: [cx, cz], footprints, roofs, replaces, ...(pools ? { pools } : {}) });
   console.log(`${L.id}: ${footprints.length} footprint(s), ${roofs.length} roof(s)`);
 }
 const dest = path.join(root, "work/landmarks/input.json");

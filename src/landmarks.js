@@ -123,12 +123,18 @@ function landmarkMaterials() {
     // Concrete cast as rock: buff-grey, not mossy.
     rock_face: pbr("concrete_floor_02", { tile: 3, tint: 0xd8d2c4 }),
     ledge: pbr("concrete_floor_02", { tile: 3, tint: 0xb0aa98 }),
+    // Step 5's animal houses.
+    glass_clear: std({ color: 0xd6e6e8, roughness: 0.05, metalness: 0.1, transparent: true, opacity: 0.22, depthWrite: false, side: THREE.DoubleSide }),
+    polytunnel: std({ color: 0xa8d47a, roughness: 0.5, transparent: true, opacity: 0.8, side: THREE.DoubleSide }),
+    sedum: pbr("sparse_grass", { tile: 2, colorize: [0.13, 0.15, 0.05] }),
+    tiles_clay: pbr("clay_roof_tiles", { tile: 2, side: THREE.DoubleSide }),
+    decking: pbr("wood_planks", { tile: 2, tint: 0xc8b8a0 }),
   });
   return materials;
 }
 
 // Materials named by pattern: render_<hex> (painted render), paint_<hex> (gloss paint),
-// fabric_<hex> (awnings, bunting, banners), sign_*/banner_*/shutter (painted images).
+// fabric_<hex> (awnings, bunting, banners), sign_*/banner_*/shutter/mosaic_*/mural_* (painted images).
 const loader = new THREE.TextureLoader();
 function imageMaterial(name) {
   const t = loader.load(`assets/landmarks/textures/${name}.png`);
@@ -149,7 +155,7 @@ function materialFor(name) {
     if (m[1] === "render") made = pbr("white_stucco", { tile: 3, tint: c, normalScale: 0.7 });
     else if (m[1] === "paint") made = new THREE.MeshStandardMaterial({ color: c, roughness: 0.45 });
     else made = new THREE.MeshStandardMaterial({ color: c, roughness: 0.85, side: THREE.DoubleSide });
-  } else if (/^(sign_|banner_|shutter|mosaic_)/.test(base)) {
+  } else if (/^(sign_|banner_|shutter|mosaic_|mural_)/.test(base)) {
     made = imageMaterial(base);
   }
   if (made) mats[base] = made;

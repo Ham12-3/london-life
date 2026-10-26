@@ -1209,5 +1209,259 @@
     ]
    ]
   ]
+ },
+ {
+  "id": "penguin-beach",
+  "name": "Penguin Beach",
+  "url": "assets/landmarks/penguin-beach.glb",
+  "origin": [
+   186.92735294117642,
+   -40.95441176470588
+  ],
+  "replaces": [
+   "The Beach Hut"
+  ],
+  "top": 4.0,
+  "solid": [
+   [
+    [
+     196.63,
+     -18.44
+    ],
+    [
+     197.04,
+     -29.06
+    ],
+    [
+     199.85,
+     -28.96
+    ],
+    [
+     199.46,
+     -30.6
+    ],
+    [
+     198.97,
+     -32.63
+    ],
+    [
+     198.97,
+     -35.33
+    ],
+    [
+     203.52,
+     -35.85
+    ],
+    [
+     205.33,
+     -38.64
+    ],
+    [
+     206.32,
+     -41.31
+    ],
+    [
+     206.27,
+     -45.85
+    ],
+    [
+     200.55,
+     -62.04
+    ],
+    [
+     196.35,
+     -65.76
+    ],
+    [
+     192.87,
+     -67.82
+    ],
+    [
+     189.07,
+     -68.53
+    ],
+    [
+     184.84,
+     -68.86
+    ],
+    [
+     179.16,
+     -67.94
+    ],
+    [
+     175.62,
+     -66.42
+    ],
+    [
+     176.46,
+     -64.47
+    ],
+    [
+     178.51,
+     -56.92
+    ],
+    [
+     178.27,
+     -54.05
+    ],
+    [
+     178.0,
+     -50.46
+    ],
+    [
+     178.69,
+     -43.39
+    ],
+    [
+     178.24,
+     -38.39
+    ],
+    [
+     177.29,
+     -35.8
+    ],
+    [
+     175.66,
+     -31.72
+    ],
+    [
+     178.79,
+     -30.28
+    ],
+    [
+     178.36,
+     -26.64
+    ],
+    [
+     174.53,
+     -26.61
+    ],
+    [
+     174.53,
+     -25.06
+    ],
+    [
+     175.06,
+     -24.1
+    ],
+    [
+     176.67,
+     -22.88
+    ],
+    [
+     180.83,
+     -19.02
+    ],
+    [
+     181.59,
+     -19.91
+    ],
+    [
+     183.23,
+     -18.71
+    ]
+   ]
+  ]
+ },
+ {
+  "id": "butterfly-paradise",
+  "name": "Butterfly Paradise",
+  "url": "assets/landmarks/butterfly-paradise.glb",
+  "origin": [
+   193.84900000000002,
+   14.3195
+  ],
+  "replaces": [
+   "b132"
+  ],
+  "top": 5.17
+ },
+ {
+  "id": "tiny-giants",
+  "name": "Tiny Giants",
+  "url": "assets/landmarks/tiny-giants.glb",
+  "origin": [
+   227.80411764705883,
+   137.15882352941176
+  ],
+  "replaces": [
+   "b119"
+  ],
+  "top": 7.4
+ },
+ {
+  "id": "in-with-the-monkeys",
+  "name": "In with the Monkeys",
+  "url": "assets/landmarks/in-with-the-monkeys.glb",
+  "origin": [
+   262.9916666666667,
+   200.76533333333336
+  ],
+  "replaces": [
+   "b155",
+   "b156",
+   "b158"
+  ],
+  "top": 16.5
+ },
+ {
+  "id": "komodo-dragon-house",
+  "name": "Attenborough Komodo Dragon House",
+  "url": "assets/landmarks/komodo-dragon-house.glb",
+  "origin": [
+   -53.35444444444444,
+   73.6722222222222
+  ],
+  "replaces": [
+   "b27"
+  ],
+  "top": 6.0
+ },
+ {
+  "id": "giants-of-the-galapagos",
+  "name": "Giants of the Gal\u00e1pagos",
+  "url": "assets/landmarks/giants-of-the-galapagos.glb",
+  "origin": [
+   148.80269230769233,
+   3.780769230769231
+  ],
+  "replaces": [
+   "Giants of the Gal\u00e1pagos"
+  ],
+  "top": 7.6
+ },
+ {
+  "id": "gir-lion-lodges",
+  "name": "Gir Lion Lodges",
+  "url": "assets/landmarks/gir-lion-lodges.glb",
+  "origin": [
+   158.5975,
+   80.585
+  ],
+  "replaces": [
+   "Leopard lodge",
+   "Peacock lodge",
+   "Chital lodge",
+   "Kingfisher lodge",
+   "Parkaeet lodge",
+   "Kingfisher lodge",
+   "Flamingo lodge",
+   "Oriole lodge",
+   "Langur lodge"
+  ],
+  "top": 4.5
+ },
+ {
+  "id": "mappin-pavilion",
+  "name": "Mappin Pavilion",
+  "url": "assets/landmarks/mappin-pavilion.glb",
+  "origin": [
+   -91.24333333333333,
+   72.48733333333332
+  ],
+  "replaces": [
+   "Mappin Pavilion"
+  ],
+  "top": 9.9
  }
 ]

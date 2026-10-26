@@ -8,6 +8,7 @@ board and village shop signs in Land of the Lions, and the turnstile roller shut
 import math
 import os
 import random
+import zlib
 
 from PIL import Image, ImageDraw, ImageFilter, ImageFont
 
@@ -117,7 +118,7 @@ def board(text, name, bg, fg, sub=None, size=(1024, 256), border=None):
     else:
         centred(d, (0, 0, size[0], size[1]), text, font(["arialbd.ttf"], int(size[1] * 0.5)), fg)
     # Weathering: faded patches and grime.
-    rnd = random.Random(hash(name) & 0xFFFF)
+    rnd = random.Random(zlib.crc32(name.encode()))  # stable across runs (hash() isn't)
     over = Image.new("RGBA", size, (0, 0, 0, 0))
     od = ImageDraw.Draw(over)
     for _ in range(60):
@@ -190,6 +191,130 @@ def monkeys(d, w, h):
             d.line((lx, y0 + 12, lx, y0 + 20), fill=(214, 168, 70), width=2)
 
 
+def mural(name, animal, bg):
+    """A hand-painted lodge mural in the Gir style: a bright panel with a patterned border, the lodge's
+    animal in the middle among leaves and flowers."""
+    W, H = 512, 640
+    im = Image.new("RGB", (W, H), bg)
+    d = ImageDraw.Draw(im)
+    rnd = random.Random(name)
+    for _ in range(70):  # leaves and flowers
+        x, y, r = rnd.uniform(0, W), rnd.uniform(0, H), rnd.uniform(10, 26)
+        a = rnd.uniform(0, math.pi)
+        d.polygon([(x + math.cos(a) * r, y + math.sin(a) * r), (x - math.sin(a) * r * 0.35, y + math.cos(a) * r * 0.35),
+                   (x - math.cos(a) * r, y - math.sin(a) * r), (x + math.sin(a) * r * 0.35, y - math.cos(a) * r * 0.35)],
+                  fill=(rnd.randint(30, 80), rnd.randint(110, 170), rnd.randint(40, 80)))
+        if rnd.random() < 0.4:
+            fx, fy = rnd.uniform(0, W), rnd.uniform(0, H)
+            d.ellipse((fx - 7, fy - 7, fx + 7, fy + 7), fill=rnd.choice([(236, 64, 90), (250, 196, 40), (250, 250, 240), (240, 120, 30)]))
+    animal(d, W, H)
+    for k, col in enumerate([(160, 30, 40), (250, 196, 40), (30, 90, 160)]):  # painted border
+        d.rectangle((k * 10, k * 10, W - 1 - k * 10, H - 1 - k * 10), outline=col, width=10)
+    for x in range(40, W - 30, 36):
+        for y in (40, H - 40):
+            d.polygon([(x, y - 8), (x + 8, y), (x, y + 8), (x - 8, y)], fill=(250, 250, 240))
+    im.filter(ImageFilter.GaussianBlur(0.8)).save(os.path.join(OUT, f"mural_{name}.png"))
+
+
+def m_leopard(d, W, H):
+    d.ellipse((90, 300, 420, 450), fill=(222, 170, 70))
+    d.ellipse((330, 230, 450, 340), fill=(222, 170, 70))
+    d.polygon([(345, 240), (360, 205), (380, 238)], fill=(222, 170, 70))
+    d.polygon([(410, 238), (425, 205), (440, 240)], fill=(222, 170, 70))
+    d.line((100, 380, 40, 300, 60, 230), fill=(222, 170, 70), width=22)
+    for x in (130, 200, 300, 370):
+        d.rectangle((x, 420, x + 30, 540), fill=(222, 170, 70))
+    rnd = random.Random(7)
+    for _ in range(40):
+        x, y = rnd.uniform(110, 420), rnd.uniform(310, 440)
+        d.ellipse((x, y, x + 18, y + 14), outline=(40, 30, 20), width=4)
+    d.ellipse((370, 270, 382, 282), fill=(30, 30, 20)); d.ellipse((405, 270, 417, 282), fill=(30, 30, 20))
+
+
+def m_peacock(d, W, H):
+    for k in range(13):  # the train, fanned
+        a = math.pi * (0.1 + 0.8 * k / 12)
+        x, y = 256 - math.cos(a) * 210, 420 - math.sin(a) * 260
+        d.line((256, 420, x, y), fill=(40, 120, 90), width=10)
+        d.ellipse((x - 26, y - 26, x + 26, y + 26), fill=(30, 140, 110))
+        d.ellipse((x - 14, y - 14, x + 14, y + 14), fill=(220, 180, 40))
+        d.ellipse((x - 7, y - 7, x + 7, y + 7), fill=(20, 40, 140))
+    d.ellipse((200, 360, 310, 520), fill=(20, 70, 170))
+    d.ellipse((240, 280, 290, 380), fill=(20, 70, 170))
+    d.polygon([(285, 300), (315, 310), (285, 318)], fill=(230, 200, 140))
+    d.rectangle((235, 515, 245, 580), fill=(150, 120, 80)); d.rectangle((265, 515, 275, 580), fill=(150, 120, 80))
+
+
+def m_bird(body, wing, beak, long_beak=False, legs=False):
+    def draw(d, W, H):
+        d.ellipse((140, 260, 380, 420), fill=body)
+        d.ellipse((300, 180, 410, 290), fill=body)
+        d.polygon([(180, 300), (330, 320), (120, 440)], fill=wing)
+        d.polygon([(150, 380), (60, 470), (110, 470), (190, 400)], fill=wing)  # tail
+        bl = 120 if long_beak else 50
+        d.polygon([(400, 225), (400 + bl, 238), (400, 252)], fill=beak)
+        d.ellipse((360, 215, 376, 231), fill=(20, 20, 20))
+        if legs:
+            d.line((240, 410, 230, 600), fill=beak, width=8); d.line((280, 410, 300, 600), fill=beak, width=8)
+        else:
+            d.line((140, 470, 470, 470), fill=(110, 80, 50), width=14)  # perch
+    return draw
+
+
+def m_flamingo(d, W, H):
+    d.ellipse((150, 260, 360, 380), fill=(240, 130, 150))
+    d.line((330, 290, 360, 160, 320, 90), fill=(240, 130, 150), width=24)
+    d.ellipse((300, 70, 360, 120), fill=(240, 130, 150))
+    d.polygon([(350, 90), (400, 110), (370, 130)], fill=(30, 30, 30))
+    d.polygon([(160, 300), (260, 300), (120, 360)], fill=(220, 90, 110))
+    d.line((250, 370, 250, 600), fill=(240, 130, 150), width=9)
+    d.line((250, 480, 210, 450, 250, 430), fill=(240, 130, 150), width=8)
+
+
+def m_chital(d, W, H):
+    d.ellipse((110, 300, 400, 430), fill=(200, 120, 50))
+    d.polygon([(360, 330), (420, 210), (450, 230), (400, 340)], fill=(200, 120, 50))
+    d.ellipse((400, 190, 470, 250), fill=(200, 120, 50))
+    for side in (0, 30):
+        d.line((420 + side, 200, 400 + side, 120, 370 + side, 90), fill=(120, 80, 40), width=7)
+        d.line((405 + side, 140, 440 + side, 110), fill=(120, 80, 40), width=6)
+    for x in (140, 190, 320, 370):
+        d.rectangle((x, 410, x + 18, 560), fill=(200, 120, 50))
+    rnd = random.Random(3)
+    for _ in range(30):
+        x, y = rnd.uniform(140, 380), rnd.uniform(315, 410)
+        d.ellipse((x, y, x + 12, y + 12), fill=(250, 245, 230))
+
+
+def m_langur(d, W, H):
+    d.ellipse((170, 280, 330, 460), fill=(190, 186, 176))
+    d.ellipse((200, 180, 300, 280), fill=(190, 186, 176))
+    d.ellipse((222, 205, 278, 265), fill=(30, 30, 34))
+    d.ellipse((232, 220, 244, 232), fill=(200, 180, 120)); d.ellipse((256, 220, 268, 232), fill=(200, 180, 120))
+    d.line((320, 420, 420, 480, 440, 600), fill=(190, 186, 176), width=18)  # tail
+    d.line((190, 320, 120, 230), fill=(190, 186, 176), width=24)
+    d.line((120, 230, 120, 120), fill=(110, 80, 50), width=16)  # branch
+
+
+def lodge_murals():
+    mural("leopard", m_leopard, (242, 205, 120))
+    mural("peacock", m_peacock, (250, 228, 180))
+    mural("chital", m_chital, (176, 214, 196))
+    mural("kingfisher", m_bird((30, 120, 200), (20, 70, 160), (220, 90, 30), long_beak=True), (250, 236, 200))
+    mural("parakeet", m_bird((80, 190, 70), (40, 140, 50), (200, 40, 40)), (240, 214, 170))
+    mural("flamingo", m_flamingo, (170, 214, 230))
+    mural("oriole", m_bird((246, 196, 30), (30, 30, 30), (220, 120, 120)), (196, 226, 200))
+    mural("langur", m_langur, (236, 186, 140))
+
+
+lodge_murals()
+board("PENGUIN BEACH", "sign_penguin_beach.png", (30, 110, 170), (255, 255, 255), sub="HUMBOLDT PENGUINS")
+board("BUTTERFLY PARADISE", "sign_butterfly.png", (60, 140, 70), (255, 240, 120))
+board("TINY GIANTS", "sign_tiny_giants.png", (24, 24, 28), (250, 210, 40), sub="THE WORLD OF INVERTEBRATES")
+board("KOMODO DRAGON", "sign_komodo.png", (64, 52, 40), (236, 214, 160), sub="THE ATTENBOROUGH KOMODO DRAGON HOUSE")
+board("GIANTS OF THE GALÁPAGOS", "sign_galapagos.png", (34, 90, 100), (255, 255, 255))
+board("IN WITH THE MONKEYS", "sign_monkeys.png", (200, 90, 30), (255, 250, 230), sub="WALK-THROUGH · SQUIRREL MONKEYS")
+board("MAPPIN PAVILION", "sign_mappin.png", (230, 224, 210), (60, 54, 46))
 mosaic("mosaic_penguins.png", penguins)
 mosaic("mosaic_monkeys.png", monkeys)
 zoo_banner()

@@ -66,8 +66,8 @@ runs through its `blender-launcher` alias).
 | Path | What |
 | --- | --- |
 | `tools/landmarks/prepare.mjs` | Real footprints of each landmark from `world.json`, plus straight-skeleton hipped roofs |
-| `tools/landmarks/build.py` | Models the Outer Circle main entrance (lodges, turnstiles, canopy and LONDON ZOO fascia), the 1927 Reptile House, Gorilla Kingdom, Rainforest Life, Land of the Lions (Sasan Gir station, high street, temple), Tiger Territory (mesh canopy on masts), the Mappin Terraces (concrete cast as rock), Guy the Gorilla in bronze, the Lubetkin Penguin Pool, Snowdon Aviary, Casson Pavilion, Clock Tower, Giraffe House, Raven Cage and Blackburn Pavilion on their footprints; writes `public/assets/landmarks/*.glb` and `landmarks.json` |
-| `tools/landmarks/signs.py` | Paints the signs, banners and entrance mosaics the landmarks use (`public/assets/landmarks/textures/`) |
+| `tools/landmarks/build.py` | Models the Outer Circle main entrance (lodges, turnstiles, canopy and LONDON ZOO fascia), the 1927 Reptile House, Gorilla Kingdom, Rainforest Life, Land of the Lions (Sasan Gir station, high street, temple), Tiger Territory (mesh canopy on masts), the Mappin Terraces (concrete cast as rock), Guy the Gorilla in bronze, the Lubetkin Penguin Pool, Snowdon Aviary, Casson Pavilion, Clock Tower, Giraffe House, Raven Cage and Blackburn Pavilion on their footprints; and the animal houses: Penguin Beach (rock-edged pool, nesting burrows, glass balustrade, the striped Beach Hut), Butterfly Paradise (a caterpillar-shaped polytunnel), Tiny Giants (the former B.U.G.S.), In with the Monkeys (walk-through mesh on masts), the Attenborough Komodo Dragon House, Giants of the Galápagos (glasshouse), the nine Gir Lion Lodges and the Mappin Pavilion; writes `public/assets/landmarks/*.glb` and `landmarks.json` |
+| `tools/landmarks/signs.py` | Paints the signs, banners, entrance mosaics and Gir Lion Lodge murals the landmarks use (`public/assets/landmarks/textures/`) |
 | `tools/animals/build.py` | 23 species built with Blender's Skin modifier, coats painted into vertex colours; writes `public/assets/animals/*.glb` and `animals.json` (leg joints for the walk cycle) |
 | `tools/furniture/build.py` | Models the street furniture and a 2.5 m railing section in Blender; writes `public/assets/furniture/*.glb` |
 | `tools/furniture/place.py` | Where it all goes: mapped items plus lamps, benches and bins along the paths, railings along every fence (`placements.json`) |
@@ -81,7 +81,10 @@ blender --background --factory-startup --python tools/animals/build.py
 ```
 
 Add species names after `--` to rebuild only those (e.g. `-- clock-tower`). A landmark replaces the
-generated building on its footprint (its walls stay solid for collision).
+generated building on its footprint (its walls stay solid for collision). After adding a landmark
+that replaces buildings, rebuild the Blender zoo's buildings (`node tools/blender_world/prepare.mjs`,
+then `buildings.py` and `landmarks_reload.py` below) and re-bake (`bake_ao.py -- atlas`), so the
+exported buildings leave its footprint clear.
 
 ## The zoo in Blender (live, through the Blender MCP add-on)
 

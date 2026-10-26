@@ -1104,15 +1104,366 @@ def guy_the_gorilla(L, B):
     return {"top": 3.2, "solid": [[(x, y) for x, y in ((-1.2, -0.7), (1.2, -0.7), (1.2, 0.7), (-1.2, 0.7))]]}
 
 
+# ---------- step 5: the remaining animal houses ----------
+
+def chord(P, c, d):
+    """Where the line through c along unit d crosses ring P: (t_min, t_max) along d, or None."""
+    ts = []
+    for i in range(len(P)):
+        (ax, ay), (bx, by) = P[i], P[(i + 1) % len(P)]
+        ex, ey = bx - ax, by - ay
+        den = d[0] * ey - d[1] * ex
+        if abs(den) < 1e-9:
+            continue
+        t = ((ax - c[0]) * ey - (ay - c[1]) * ex) / den
+        s = ((ax - c[0]) * d[1] - (ay - c[1]) * d[0]) / den
+        if 0 <= s <= 1:
+            ts.append(t)
+    return (min(ts), max(ts)) if len(ts) >= 2 else None
+
+
+def sign_on_posts(B, x, y, ux, uy, width, z0, z1, mat, post="paint_2b302d"):
+    """A painted board on two posts, reading left to right along (ux, uy)."""
+    p0, p1 = (x - ux * width / 2, y - uy * width / 2), (x + ux * width / 2, y + uy * width / 2)
+    B.face([(p0[0], p0[1], z0), (p1[0], p1[1], z0), (p1[0], p1[1], z1), (p0[0], p0[1], z1)], mat, uvs=SIGN_UV)
+    for px, py in (p0, p1):
+        B.tube((px, py, 0), (px, py, z1 + 0.05), 0.05, post, 6)
+
+
+def gable_roof(B, P, eave, rise, mat, overhang=0.4, gable="timber_white"):
+    """A pitched roof with its ridge along the footprint's long axis, and gable ends."""
+    (cx, cy), u, v, a, b = axes(P)
+    a, b = a + overhang, b + overhang
+    at = lambda s, t, z: (cx + u[0] * s + v[0] * t, cy + u[1] * s + v[1] * t, z)
+    for sgn in (1, -1):
+        B.face([at(-a, sgn * b, eave), at(a, sgn * b, eave), at(a, 0, eave + rise), at(-a, 0, eave + rise)][::sgn], mat,
+               uvs=[(0, 0), (2 * a, 0), (2 * a, math.hypot(b, rise)), (0, math.hypot(b, rise))][::sgn])
+    for s in (-a + overhang, a - overhang):
+        B.face([at(s, -b + overhang, eave), at(s, b - overhang, eave), at(s, 0, eave + rise - overhang * rise / b)], gable)
+
+
+def penguin_beach(L, B):
+    """Penguin Beach (2011), a South American beach for Humboldt penguins: a big pool edged with
+    rocks, sandy nooks with timber nesting burrows, glass balustrades round the visitors' side, and
+    the striped Beach Hut."""
+    rnd = __import__("random").Random(2011)
+    A = ccw(ring(L["footprints"][0]))
+    pool = ccw(ring(L["pools"][0])) if L.get("pools") else []
+    B.ring_wall(A, 0, 0.2, 0.3, "concrete")
+    for a, b, ln, ux, uy, nx, ny in edges_of(A):
+        n = max(1, round(ln / 1.8))
+        for k in range(n):
+            t0, t1 = k * ln / n, (k + 1) * ln / n
+            p0, p1 = (a[0] + ux * t0, a[1] + uy * t0), (a[0] + ux * t1, a[1] + uy * t1)
+            B.face([(p0[0], p0[1], 0.2), (p1[0], p1[1], 0.2), (p1[0], p1[1], 1.1), (p0[0], p0[1], 1.1)], "glass_clear")
+            B.tube((p0[0], p0[1], 0.2), (p0[0], p0[1], 1.16), 0.035, "steel", 6)
+        B.tube((a[0], a[1], 1.13), (b[0], b[1], 1.13), 0.03, "steel", 6)
+    near_rail = lambda x, y: min(math.hypot(x - q[0], y - q[1]) for q in resample(A, 0.5)) < 1.2
+    # Rocks round the pool, except where the visitors look straight over the glass.
+    for x, y in resample(pool, 1.2):
+        if not near_rail(x, y):
+            r = rnd.uniform(0.45, 0.9)
+            B.dome((x, y, 0), r, r * rnd.uniform(0.6, 1.0), "rock", 10, 4)
+    beach = [(x, y) for x, y in ((rnd.uniform(-12, 20), rnd.uniform(-22, 28)) for _ in range(4000))
+             if inside(A, x, y) and not inside(pool, x, y) and not near_rail(x, y)
+             and min(math.hypot(x - q[0], y - q[1]) for q in pool) > 1.4]
+    placed = []
+    for x, y in beach:  # timber nesting burrows on the sand
+        if len(placed) >= 6:
+            break
+        if all(math.hypot(x - p[0], y - p[1]) > 2.6 for p in placed):
+            yaw = rnd.uniform(0, math.pi)
+            B.box((x, y, 0.35), (1.3, 0.95, 0.7), yaw, "timber_weathered")
+            B.box((x, y, 0.74), (1.45, 1.1, 0.08), yaw, "timber_dark")
+            B.box((x + math.cos(yaw) * 0.66, y + math.sin(yaw) * 0.66, 0.28), (0.04, 0.42, 0.42), yaw, "paint_1e1e1e")
+            placed.append((x, y))
+    for x, y in beach[::max(1, len(beach) // 5)][:5]:  # boulders
+        if all(math.hypot(x - p[0], y - p[1]) > 2.2 for p in placed):
+            r = rnd.uniform(1.0, 1.7)
+            B.dome((x, y, 0), r, r * 0.8, "rock", 12, 5)
+    # The Beach Hut: vertical stripes, a red pitched roof, a serving hatch.
+    if len(L["footprints"]) > 1:
+        H = ccw(ring(L["footprints"][1]))
+        B.prism(H, 0, 2.6, "paint_f6f2e8", top=False)
+        for a, b, ln, ux, uy, nx, ny in edges_of(H):
+            for k in range(0, int(ln / 0.45), 2):
+                wall_panel(B, a, ux, uy, nx, ny, k * 0.45, min(ln, k * 0.45 + 0.45), 0.25, 2.6, 0.02, "paint_3b8fd0")
+        a, b, ln, ux, uy, nx, ny = max(edges_of(H), key=lambda e: e[2])
+        wall_panel(B, a, ux, uy, nx, ny, ln * 0.25, ln * 0.75, 1.0, 1.9, 0.04, "paint_1e1e1e")
+        B.box((a[0] + ux * ln / 2 + nx * 0.3, a[1] + uy * ln / 2 + ny * 0.3, 1.0), (ln * 0.55, 0.5, 0.06), math.atan2(uy, ux), "timber_white")
+        gable_roof(B, H, 2.6, 1.3, "paint_d84a3a", 0.35, "paint_f6f2e8")
+    a, b, ln, ux, uy, nx, ny = max(edges_of(A), key=lambda e: e[2])
+    sign_on_posts(B, a[0] + ux * ln / 2 + nx * 0.8, a[1] + uy * ln / 2 + ny * 0.8, ux, uy, 3.2, 1.6, 2.4, "sign_penguin_beach")
+    return {"top": 4.0, "solid": [A]}
+
+
+def butterfly_paradise(L, B):
+    """Butterfly Paradise: a polytunnel greenhouse shaped like a giant caterpillar, its translucent
+    green body bulging segment by segment along the footprint, banded in yellow, with a round head,
+    eyes and antennae at the wide end."""
+    P = ccw(ring(L["footprints"][0]))
+    (cx, cy), u, v, a, b = axes(P)
+    st = [s * 0.5 for s in range(int(-a * 2) + 1, int(a * 2))]
+    widths = {s: chord(P, (cx + u[0] * s, cy + u[1] * s), v) for s in st}
+    widths = {s: w for s, w in widths.items() if w}
+    med = sorted(w[1] - w[0] for w in widths.values())[len(widths) // 2]
+    head_end = 1 if sum(w[1] - w[0] for s, w in widths.items() if s > 0) > sum(w[1] - w[0] for s, w in widths.items() if s < 0) else -1
+    wide = [s for s, w in widths.items() if w[1] - w[0] > med * 1.45 and s * head_end > 0]
+    head_start = min(wide, key=lambda s: abs(s)) if wide else a * head_end
+    body = sorted(s for s in widths if (s * head_end < head_start * head_end - 1.0))
+    seg = 2.4
+    rows, n = [], 14
+    for s in body:
+        t0, t1 = widths[s]
+        tm, hw = (t0 + t1) / 2, min((t1 - t0) / 2, med * 0.55)
+        bulge = 0.88 + 0.12 * math.sin(math.pi * ((s - body[0]) % seg) / seg)
+        h = 4.6 * bulge
+        rows.append([(cx + u[0] * s + v[0] * (tm + hw * bulge * math.cos(math.pi * j / n)),
+                      cy + u[1] * s + v[1] * (tm + hw * bulge * math.cos(math.pi * j / n)), h * math.sin(math.pi * j / n)) for j in range(n + 1)])
+    for i in range(len(rows) - 1):
+        for j in range(n):
+            B.face([rows[i][j], rows[i + 1][j], rows[i + 1][j + 1], rows[i][j + 1]], "polytunnel", smooth=True)
+    for i in range(0, len(rows), int(seg / 0.5)):  # the yellow bands between segments
+        B.polyline_tube(rows[i], 0.09, "paint_f4c430", 6)
+    tail = rows[0]
+    mid = ((tail[0][0] + tail[-1][0]) / 2, (tail[0][1] + tail[-1][1]) / 2, 0)
+    for j in range(n):
+        B.face([mid, tail[j + 1], tail[j]], "polytunnel")
+    # The head over the wide end: a dome with big eyes and two antennae.
+    hp = [p for p in P if ((p[0] - cx) * u[0] + (p[1] - cy) * u[1]) * head_end > abs(head_start) - 1.0]
+    hx, hy = centroid(hp) if hp else (cx + u[0] * head_start, cy + u[1] * head_start)
+    r = max(2.5, min(5.0, max(math.hypot(p[0] - hx, p[1] - hy) for p in hp) * 0.8 if hp else 3.5))
+    B.dome((hx, hy, 0), r, r * 1.15, "paint_6cae3e", 20, 8)
+    d = (u[0] * head_end, u[1] * head_end)
+    for side in (-1, 1):
+        ex, ey = hx + d[0] * r * 0.72 + v[0] * side * r * 0.42, hy + d[1] * r * 0.72 + v[1] * side * r * 0.42
+        B.sphere((ex, ey, r * 0.78), r * 0.22, "paint_f6f2e8", 12)
+        B.sphere((ex + d[0] * r * 0.14, ey + d[1] * r * 0.14, r * 0.8), r * 0.11, "paint_1e1e1e", 10)
+        top = (hx + v[0] * side * r * 0.3, hy + v[1] * side * r * 0.3, r * 1.1)
+        tip = (hx + d[0] * r * 0.4 + v[0] * side * r * 0.9, hy + d[1] * r * 0.4 + v[1] * side * r * 0.9, r * 1.1 + 2.0)
+        B.tube(top, tip, 0.08, "paint_1e1e1e", 6)
+        B.sphere(tip, 0.22, "paint_f4c430", 8)
+    s0 = body[0]
+    ex, ey = cx + u[0] * (s0 - 1.2), cy + u[1] * (s0 - 1.2)
+    sign_on_posts(B, ex + v[0] * (med * 0.6 + 1.5), ey + v[1] * (med * 0.6 + 1.5), u[0], u[1], 3.0, 1.7, 2.4, "sign_butterfly")
+    return {"top": r * 1.15 + 2.3}
+
+
+def tiny_giants(L, B):
+    """Tiny Giants (2022, in the former B.U.G.S. building): a long, low timber-clad hall under a
+    planted sedum roof, glazed slots down its sides, a glazed entrance and big yellow lettering."""
+    P = ccw(ring(L["footprints"][0]))
+    H = 7.0
+    B.prism(P, 0, H, "timber_weathered", top=True, top_mat="sedum")
+    B.prism(offset(P, 0.05), 0, 0.6, "concrete", top=False)
+    B.prism(offset(P, 0.18), H - 0.5, H + 0.3, "paint_2b302d", top=False)
+    es = edges_of(P)
+    a, b, ln, ux, uy, nx, ny = max(es, key=lambda e: e[2])
+    for ea, eb, eln, eux, euy, enx, eny in es:
+        if (ea, eb) == (a, b):
+            continue
+        for k in range(int(eln // 5)):
+            t = (k + 0.5) * eln / int(eln // 5)
+            wall_panel(B, ea, eux, euy, enx, eny, t - 0.6, t + 0.6, 0.9, 5.6, 0.04, "glass")
+    # The entrance: a full-height glazed bay with a canopy and the sign above.
+    m = ln / 2
+    wall_panel(B, a, ux, uy, nx, ny, m - 4.5, m + 4.5, 0.6, 4.6, 0.04, "glass")
+    for t in [m - 4.5 + k * 1.5 for k in range(7)]:
+        B.box((a[0] + ux * t + nx * 0.08, a[1] + uy * t + ny * 0.08, 2.6), (0.12, 0.1, 4.0), math.atan2(uy, ux), "paint_2b302d")
+    q = lambda t, out, z: (a[0] + ux * t + nx * out, a[1] + uy * t + ny * out, z)
+    B.face([q(m - 5.5, 0, 4.7), q(m + 5.5, 0, 4.7), q(m + 5.5, 2.6, 4.6), q(m - 5.5, 2.6, 4.6)], "paint_2b302d")
+    wall_panel(B, a, ux, uy, nx, ny, m - 4.0, m + 4.0, 4.9, 6.4, 0.06, "sign_tiny_giants", uvs=SIGN_UV)
+    return {"top": H + 0.4}
+
+
+def komodo_dragon_house(L, B):
+    """The Attenborough Komodo Dragon House (2004): a low house clad in weathered timber over a stone
+    plinth, under a planted roof with a deep dark fascia; glazed along its longest side, with an
+    entrance canopy and sign."""
+    P = ccw(ring(L["footprints"][0]))
+    H = 5.6
+    B.prism(P, 0, H, "timber_weathered", top=True, top_mat="sedum")
+    B.prism(offset(P, 0.06), 0, 0.8, "sandstone", top=False)
+    B.prism(offset(P, 0.3), H - 0.45, H + 0.25, "timber_dark", top=False)
+    B.face([(x, y, H - 0.45) for x, y in offset(P, 0.3)[::-1]], "timber_dark")
+    es = sorted(edges_of(P), key=lambda e: -e[2])
+    a, b, ln, ux, uy, nx, ny = es[0]
+    wall_panel(B, a, ux, uy, nx, ny, 0.8, ln - 0.8, 1.0, 4.3, 0.04, "glass")
+    for k in range(int((ln - 1.6) / 2.2) + 1):
+        t = 0.8 + k * (ln - 1.6) / max(1, int((ln - 1.6) / 2.2))
+        B.box((a[0] + ux * t + nx * 0.08, a[1] + uy * t + ny * 0.08, 2.65), (0.16, 0.12, 3.3), math.atan2(uy, ux), "timber_dark")
+    a, b, ln, ux, uy, nx, ny = es[1]
+    m = ln / 2
+    wall_panel(B, a, ux, uy, nx, ny, m - 1.3, m + 1.3, 0.8, 3.3, 0.04, "glass")
+    q = lambda t, out, z: (a[0] + ux * t + nx * out, a[1] + uy * t + ny * out, z)
+    B.face([q(m - 2.6, 0, 3.7), q(m + 2.6, 0, 3.7), q(m + 2.6, 2.4, 3.6), q(m - 2.6, 2.4, 3.6)], "timber_dark")
+    for t in (m - 2.4, m + 2.4):
+        p0 = q(t, 2.2, 0)
+        B.tube(p0, (p0[0], p0[1], 3.62), 0.09, "timber_dark", 8)
+    wall_panel(B, a, ux, uy, nx, ny, m - 2.6, m + 2.6, 3.85, 4.95, 0.06, "sign_komodo", uvs=SIGN_UV)
+    return {"top": H + 0.4}
+
+
+def giants_of_the_galapagos(L, B):
+    """Giants of the Galápagos (2021): a warm glasshouse for the giant tortoises, glazed walls on a
+    red-brick plinth under a glass vault on white steel arches."""
+    P = ccw(ring(L["footprints"][0]))
+    E = 3.4
+    B.prism(P, 0, 0.8, "brick_red", top=False)
+    B.prism(P, 0.8, E, "glass_roof", top=False)
+    for x, y in resample(P, 1.6):
+        B.tube((x, y, 0.8), (x, y, E), 0.05, "paint_e8e8e2", 6)
+    B.ring_wall(offset(P, 0.1), E, E + 0.22, 0.25, "paint_e8e8e2")
+    B.face([(x, y, E + 0.05) for x, y in P], "glass_roof")
+    (cx, cy), u, v, a, b = axes(P)
+    # Centre on the footprint's extent: the rounded ends have far more outline points than the sides.
+    su = [(p[0] - cx) * u[0] + (p[1] - cy) * u[1] for p in P]
+    sv = [(p[0] - cx) * v[0] + (p[1] - cy) * v[1] for p in P]
+    mu, mv = (min(su) + max(su)) / 2, (min(sv) + max(sv)) / 2
+    cx, cy = cx + u[0] * mu + v[0] * mv, cy + u[1] * mu + v[1] * mv
+    a, b = (max(su) - min(su)) / 2 * 0.66, (max(sv) - min(sv)) / 2 * 0.92
+    rise = b * 0.7
+    nu, nv = max(4, int(a * 2 / 1.8)), 14
+    pt = lambda i, j: (cx + u[0] * (-a + 2 * a * i / nu) + v[0] * (-b * math.cos(math.pi * j / nv)),
+                       cy + u[1] * (-a + 2 * a * i / nu) + v[1] * (-b * math.cos(math.pi * j / nv)),
+                       E + 0.2 + rise * math.sin(math.pi * j / nv))
+    for i in range(nu):
+        for j in range(nv):
+            B.face([pt(i, j), pt(i + 1, j), pt(i + 1, j + 1), pt(i, j + 1)], "glass_roof")
+    for i in range(0, nu + 1, 2):
+        B.polyline_tube([pt(i, j) for j in range(nv + 1)], 0.08, "paint_e8e8e2", 6)
+    B.tube(pt(0, nv // 2), pt(nu, nv // 2), 0.07, "paint_e8e8e2", 6)
+    for i in (0, nu):
+        c = pt(i, 0)
+        mid = (c[0] + v[0] * b, c[1] + v[1] * b, E + 0.2)
+        for j in range(nv):
+            B.face([mid, pt(i, j), pt(i, j + 1)], "glass_roof")
+    ea, eb, ln, ux, uy, nx, ny = max(edges_of(P), key=lambda e: e[2])
+    sign_on_posts(B, ea[0] + ux * ln / 2 + nx * 1.5, ea[1] + uy * ln / 2 + ny * 1.5, ux, uy, 3.6, 1.5, 2.2, "sign_galapagos")
+    return {"top": E + 0.2 + rise + 0.3}
+
+
+def in_with_the_monkeys(L, B):
+    """In with the Monkeys: a walk-through squirrel-monkey forest under stainless-steel mesh, held up
+    on tall masts with a mesh curtain on posts all round, keepers' huts and the entrance sign."""
+    A = ccw(ring(L["footprints"][0]))
+    (cx, cy), u, v, a, b = axes(A)
+    edge = offset(A, -0.3)
+    base = 5.0
+    for a0, b0, ln, ux, uy, nx, ny in edges_of(edge):
+        B.face([(a0[0], a0[1], 0), (b0[0], b0[1], 0), (b0[0], b0[1], base), (a0[0], a0[1], base)], "net",
+               uvs=[(0, 0), (ln / 2, 0), (ln / 2, base / 2), (0, base / 2)])
+    for x, y in resample(edge, 5.0):
+        B.tube((x, y, 0), (x, y, base + 0.1), 0.07, "alu", 8)
+    peaks = []
+    for s, t, h in ((-0.55, 0.0, 14.5), (-0.1, -0.3, 16.0), (0.05, 0.35, 15.0), (0.55, 0.0, 14.0)):
+        x, y = cx + u[0] * a * s + v[0] * b * t, cy + u[1] * a * s + v[1] * b * t
+        while not inside(edge, x, y):
+            x, y = x * 0.8 + cx * 0.2, y * 0.8 + cy * 0.2
+        B.tube((x, y, 0), (x, y, h), 0.18, "alu", 10)
+        peaks.append((x, y, h))
+    tension_net(B, edge, peaks, base, reach=19.0)
+    for fp in L["footprints"][1:]:  # keepers' huts
+        P = ccw(ring(fp))
+        B.prism(P, 0, 2.7, "timber_weathered", top=True, top_mat="corrugated")
+        B.prism(offset(P, 0.04), 0, 0.3, "concrete", top=False)
+    a0, b0, ln, ux, uy, nx, ny = max(edges_of(A), key=lambda e: e[2])
+    sign_on_posts(B, a0[0] + ux * ln / 2 + nx * 1.2, a0[1] + uy * ln / 2 + ny * 1.2, ux, uy, 3.4, 1.8, 2.6, "sign_monkeys")
+    return {"top": 16.5}
+
+
+LODGES = ["leopard", "peacock", "chital", "kingfisher", "parakeet", "kingfisher", "flamingo", "oriole", "langur"]
+
+
+def gir_lion_lodges(L, B):
+    """The Gir Lion Lodges (2016): nine timber cabins on stilts at the edge of Land of the Lions, each
+    named after an animal of the Gir Forest, with a tin roof, a veranda facing the lions and a
+    hand-painted mural of its animal by the door."""
+    world = json.load(open(os.path.join(ROOT, "public", "world.json"), encoding="utf-8"))
+    lions = next(x for x in world["areas"] if x["name"] == "Land of the Lions")
+    lx, lz = centroid(ring(lions["pts"]))
+    lions_local = (lx - L["origin"][0], -(lz - L["origin"][1]))
+    floor, eave = 0.6, 2.9
+    for fi, fp in enumerate(L["footprints"]):
+        P = ccw(ring(fp))
+        c = centroid(P)
+        for x, y in P:
+            B.tube((x, y, 0), (x, y, floor), 0.1, "timber_dark", 6)
+        B.prism(P, floor - 0.15, floor, "timber_dark", top=True, top_mat="decking")
+        B.prism(P, floor, eave, "timber_weathered", top=False)
+        for sk in [r for r in L["roofs"] if r.get("fi") == fi]:
+            B.roof(sk, lambda pts: [(pts, "corrugated_rust")])
+        # The front faces the lions.
+        es = edges_of(P)
+        a, b, ln, ux, uy, nx, ny = max(es, key=lambda e: e[5] * (lions_local[0] - c[0]) + e[6] * (lions_local[1] - c[1]))
+        q = lambda t, out, z: (a[0] + ux * t + nx * out, a[1] + uy * t + ny * out, z)
+        B.face([q(0, 0, floor), q(ln, 0, floor), q(ln, 1.8, floor), q(0, 1.8, floor)], "decking")  # veranda
+        B.face([q(0, 1.8, floor - 0.15), q(ln, 1.8, floor - 0.15), q(ln, 1.8, floor), q(0, 1.8, floor)], "timber_dark")
+        for t in (0.15, ln - 0.15):
+            B.tube(q(t, 1.7, 0), q(t, 1.7, eave - 0.2), 0.07, "timber_dark", 6)
+        B.tube(q(0.15, 1.7, floor + 0.9), q(ln - 0.15, 1.7, floor + 0.9), 0.04, "timber_dark", 6)
+        B.face([q(-0.2, 0, eave - 0.05), q(ln + 0.2, 0, eave - 0.05), q(ln + 0.2, 2.1, eave - 0.45), q(-0.2, 2.1, eave - 0.45)][::-1], "corrugated_rust")
+        B.box(q(ln / 2, 2.2, 0.15), (1.1, 0.5, 0.3), math.atan2(uy, ux), "timber_dark")  # step
+        wall_panel(B, a, ux, uy, nx, ny, 0.3, 0.3 + 1.5, floor + 0.3, floor + 0.3 + 1.9, 0.03, f"mural_{LODGES[fi % len(LODGES)]}", uvs=SIGN_UV)
+        wall_panel(B, a, ux, uy, nx, ny, ln - 1.3, ln - 0.4, floor, floor + 2.0, 0.03, "paint_2f7fb0")  # door
+        for e in es:
+            if e[0] != a and e[2] > 2.5:  # side windows with painted shutters
+                ea, eb, eln, eux, euy, enx, eny = e
+                wall_panel(B, ea, eux, euy, enx, eny, eln / 2 - 0.5, eln / 2 + 0.5, floor + 0.9, floor + 1.9, 0.03, "glass")
+                wall_panel(B, ea, eux, euy, enx, eny, eln / 2 - 0.95, eln / 2 - 0.5, floor + 0.9, floor + 1.9, 0.05, "paint_c9653a")
+                wall_panel(B, ea, eux, euy, enx, eny, eln / 2 + 0.5, eln / 2 + 0.95, floor + 0.9, floor + 1.9, 0.05, "paint_c9653a")
+    return {"top": eave + 1.6}
+
+
+def mappin_pavilion(L, B):
+    """The Mappin Pavilion (John James Joass, 1914), the tea pavilion below the Mappin Terraces: cream
+    render over a stone plinth, a bowed front of tall arched windows, a stone cornice, a hipped roof
+    of clay tiles, and a pedimented porch."""
+    P = ccw(ring(L["footprints"][0]))
+    eave = 6.4
+    B.prism(P, 0, eave, "render_efe6d2", top=False)
+    B.prism(offset(P, 0.06), 0, 0.8, "stone", top=False)
+    B.prism(offset(P, 0.08), 3.2, 3.45, "stone", top=False)  # string course
+    B.prism(offset(P, 0.2), eave - 0.45, eave, "stone", top=False)  # cornice
+    B.face([(x, y, eave - 0.45) for x, y in offset(P, 0.2)[::-1]], "stone")
+    for sk in L["roofs"]:
+        B.roof(sk, lambda pts: [(pts, "tiles_clay")])
+    es = edges_of(P)
+    for a, b, ln, ux, uy, nx, ny in es:
+        n = int(ln // 2.6)
+        for k in range(n):
+            t = (k + 0.5) * ln / n
+            arched_window(B, a[0] + ux * t, a[1] + uy * t, ux, uy, nx, ny, 1.0, 1.0, 2.6, ("stone", "glass"))
+            arched_window(B, a[0] + ux * t, a[1] + uy * t, ux, uy, nx, ny, 0.8, 4.0, 5.2, ("stone", "glass"))
+        if 1.0 < ln < 2.6:  # the bow: one tall window per facet
+            arched_window(B, a[0] + ux * ln / 2, a[1] + uy * ln / 2, ux, uy, nx, ny, 0.55, 1.0, 4.6, ("stone", "glass"))
+    a, b, ln, ux, uy, nx, ny = max(es, key=lambda e: e[2])
+    m = ln / 2
+    q = lambda t, out, z: (a[0] + ux * t + nx * out, a[1] + uy * t + ny * out, z)
+    for t in (m - 2.2, m - 0.75, m + 0.75, m + 2.2):  # porch columns
+        B.tube(q(t, 2.2, 0.8), q(t, 2.2, 4.0), 0.2, "stone", 12)
+    B.box(q(m, 1.15, 4.2), (5.2, 2.6, 0.4), math.atan2(uy, ux), "stone")
+    B.face([q(m - 2.6, 2.45, 4.4), q(m + 2.6, 2.45, 4.4), q(m, 2.45, 5.6)], "stone")  # pediment
+    B.face([q(m - 2.6, 2.45, 4.4), q(m, 2.45, 5.6), q(m, -0.05, 5.6), q(m - 2.6, -0.05, 4.4)][::-1], "tiles_clay")
+    B.face([q(m + 2.6, 2.45, 4.4), q(m + 2.6, -0.05, 4.4), q(m, -0.05, 5.6), q(m, 2.45, 5.6)][::-1], "tiles_clay")
+    B.box(q(m, 1.25, 0.4), (5.0, 2.5, 0.8), math.atan2(uy, ux), "stone")
+    wall_panel(B, a, ux, uy, nx, ny, m - 0.8, m + 0.8, 0.8, 3.4, 0.03, "paint_2b302d")  # doors
+    wall_panel(B, a, ux, uy, nx, ny, m - 2.0, m + 2.0, 3.55, 4.0, 0.05, "sign_mappin", uvs=SIGN_UV)
+    return {"top": eave + 3.5}
+
+
 BUILDERS = {
     "penguin-pool": penguin_pool, "snowdon-aviary": snowdon_aviary, "casson-pavilion": casson_pavilion,
     "clock-tower": clock_tower, "giraffe-house": giraffe_house, "raven-cage": raven_cage,
     "blackburn-pavilion": blackburn_pavilion, "main-entrance": main_entrance, "reptile-house": reptile_house,
     "gorilla-kingdom": gorilla_kingdom, "rainforest-life": rainforest_life, "land-of-the-lions": land_of_the_lions,
     "tiger-territory": tiger_territory, "mappin-terraces": mappin_terraces, "guy-the-gorilla": guy_the_gorilla,
+    "penguin-beach": penguin_beach, "butterfly-paradise": butterfly_paradise, "tiny-giants": tiny_giants,
+    "in-with-the-monkeys": in_with_the_monkeys, "komodo-dragon-house": komodo_dragon_house,
+    "giants-of-the-galapagos": giants_of_the_galapagos, "gir-lion-lodges": gir_lion_lodges, "mappin-pavilion": mappin_pavilion,
 }
 BEVEL = {"penguin-pool": 0.03, "casson-pavilion": 0.03, "giraffe-house": 0.02, "clock-tower": 0.015, "blackburn-pavilion": 0.02,
-         "reptile-house": 0.02}
+         "reptile-house": 0.02, "komodo-dragon-house": 0.02, "mappin-pavilion": 0.02, "tiny-giants": 0.02}
 
 
 def to_world(L, p):

@@ -137,7 +137,10 @@ for br in world["barriers"]:
             n = max(1, round(L / 2.5))
             for k in range(n):
                 c = s0 + (k + 0.5) * L / n
-                out["railing"].append([round(a[0] + ux * c, 2), round(a[1] + uz * c, 2), round(yaw, 3), round(L / n, 3)])
+                x, z = a[0] + ux * c, a[1] + uz * c
+                if any(x0 < x < x1 and z0 < z < z1 and inside(pts, x, z) for pts, (x0, z0, x1, z1) in blockers[:len(world["buildings"])]):
+                    continue  # mapped fences sometimes run through a building's footprint
+                out["railing"].append([round(x, 2), round(z, 2), round(yaw, 3), round(L / n, 3)])
 
 dest = os.path.join(ROOT, "public", "assets", "furniture", "placements.json")
 json.dump(out, open(dest, "w"))
