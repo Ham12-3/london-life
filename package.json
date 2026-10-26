@@ -1,0 +1,20 @@
+{
+  "name": "london-life",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "description": "First-person walkable simulation of ZSL London Zoo",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "world": "python -I tools/build_world.py"
+  },
+  "dependencies": {
+    "@sparkjsdev/spark": "^2.4.0",
+    "three": "^0.186.1"
+  },
+  "devDependencies": {
+    "vite": "^8.3.5"
+  }
+}

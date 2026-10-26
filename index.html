@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>London Zoo Walk</title>
+    <link rel="stylesheet" href="/src/style.css" />
+  </head>
+  <body>
+    <div id="app"></div>
+
+    <div id="where" class="chip">Loading…</div>
+    <div id="mode" class="chip chip-mode"></div>
+    <div id="status" class="chip chip-status"></div>
+    <canvas id="minimap" width="200" height="200"></canvas>
+    <div class="buttons">
+      <button data-open="places">Places (T)</button>
+      <button data-open="bigmap">Map (M)</button>
+    </div>
+    <div id="crosshair"></div>
+
+    <div id="intro" class="overlay">
+      <div class="card">
+        <h1>ZSL London Zoo</h1>
+        <p>A walkable model of the whole zoo, built from the real map: every path, building, enclosure, fence and tree.</p>
+        <button id="enter">Click to start walking</button>
+        <dl>
+          <dt>W A S D / arrows</dt><dd>Walk</dd>
+          <dt>Shift</dt><dd>Run</dd>
+          <dt>Mouse</dt><dd>Look around</dd>
+          <dt>T</dt><dd>Search places and jump there</dd>
+          <dt>M</dt><dd>Full map (click to teleport)</dd>
+          <dt>N</dt><dd>Fly mode (Q/E down/up)</dd>
+          <dt>Esc</dt><dd>Pause</dd>
+        </dl>
+      </div>
+    </div>
+
+    <div id="bigmap" class="overlay" hidden>
+      <div class="card card-wide">
+        <div class="card-head"><h2>Map: click anywhere to go there</h2><button data-open="bigmap">Close</button></div>
+        <canvas id="bigmap-canvas"></canvas>
+      </div>
+    </div>
+
+    <div id="places" class="overlay" hidden>
+      <div class="card">
+        <div class="card-head"><h2>Places</h2><button data-open="places">Close</button></div>
+        <input id="places-search" placeholder="Search: penguins, gorillas, reptile house…" autocomplete="off" />
+        <div id="places-list"></div>
+      </div>
+    </div>
+
+    <script type="module" src="/src/main.js"></script>
+  </body>
+</html>
