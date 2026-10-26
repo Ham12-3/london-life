@@ -4,7 +4,7 @@
 // walk (one draw call per species, however many animals).
 import * as THREE from "three/webgpu";
 import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
-import { attribute, positionLocal, time, sin, cos, abs, vec3, float, instancedDynamicBufferAttribute } from "three/tsl";
+import { attribute, positionLocal, positionGeometry, time, sin, cos, abs, vec3, float, uniformArray, instanceIndex } from "three/tsl";
 import { pointInPoly } from "./world.js";
 
 // Keyword in the OSM area name -> species model. len in metres (sets walking pace).
@@ -58,21 +58,21 @@ function legAttribute(geo, rig) {
 
 function walkingMaterial(rig, sp, walk) {
   const leg = attribute("leg", "vec4");
-  const state = instancedDynamicBufferAttribute(walk, "vec2"); // (walking 0..1, own phase)
+  // Per animal (walking 0..1, own phase, cos heading, sin heading): a uniform array by instance.
+  const state = uniformArray(walk, "vec4").element(instanceIndex);
   // One stride per ~0.9 hip heights travelled, so the feet don't skate.
   const hip = Math.max(...rig.legs.map((l) => l[1]));
   const freq = (2 * Math.PI * (0.4 + sp.len * 0.3)) / Math.max(0.12, hip * 0.9);
   const phase = time.mul(freq).add(state.y);
   const theta = sin(phase.add(leg.w)).mul(0.42).mul(leg.z).mul(state.x);
-  const dx = positionLocal.x.sub(leg.x), dy = positionLocal.y.sub(leg.y);
-  const swung = vec3(
-    leg.x.add(dx.mul(cos(theta))).sub(dy.mul(sin(theta))),
-    leg.y.add(dx.mul(sin(theta))).add(dy.mul(cos(theta))),
-    positionLocal.z,
-  );
-  const bob = abs(sin(phase)).mul(hip * 0.035).mul(state.x);
+  // Swing in the model's own space, then turn that offset by the animal's heading and add it to the
+  // placed position (three applies the instance matrix before positionNode).
+  const p = positionGeometry;
+  const dx = p.x.sub(leg.x), dy = p.y.sub(leg.y);
+  const offX = leg.x.add(dx.mul(cos(theta))).sub(dy.mul(sin(theta))).sub(p.x);
+  const offY = leg.y.add(dx.mul(sin(theta))).add(dy.mul(cos(theta))).sub(p.y).add(abs(sin(phase)).mul(hip * 0.035).mul(state.x));
   const m = new THREE.MeshStandardNodeMaterial({ vertexColors: true, roughness: 0.85 });
-  m.positionNode = swung.add(vec3(0, bob, 0));
+  m.positionNode = positionLocal.add(vec3(offX.mul(state.z), offY, offX.mul(state.w).negate()));
   return m;
 }
 
@@ -138,8 +138,7 @@ export async function spawnAnimals(world, scene, { replacedSpecies = new Set(), 
   for (const [sp, herd] of herds) {
     const model = models.get(sp.id);
     if (!model) continue;
-    herd.walk = new THREE.InstancedBufferAttribute(new Float32Array(herd.animals.length * 2), 2);
-    herd.animals.forEach((an, i) => herd.walk.setXY(i, 0, an.rnd() * 6.28));
+    herd.walk = herd.animals.map((an) => new THREE.Vector4(0, an.rnd() * 6.28, 1, 0));
     herd.inst = new THREE.InstancedMesh(model.geo, walkingMaterial(model.rig, sp, herd.walk), herd.animals.length);
     herd.inst.castShadow = true;
     herd.inst.receiveShadow = true;
@@ -175,10 +174,12 @@ export async function spawnAnimals(world, scene, { replacedSpecies = new Set(), 
         herd.animals.forEach((an, i) => {
           an.mesh.updateMatrix();
           herd.inst.setMatrixAt(i, an.mesh.matrix);
-          herd.walk.setX(i, an.walking);
+          const w = herd.walk[i], a = an.mesh.rotation.y;
+          w.x = an.walking;
+          w.z = Math.cos(a);
+          w.w = Math.sin(a);
         });
         herd.inst.instanceMatrix.needsUpdate = true;
-        herd.walk.needsUpdate = true;
       }
     },
   };

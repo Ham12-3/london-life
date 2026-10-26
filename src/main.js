@@ -9,6 +9,7 @@ import { createTrees, TREE_RANGE } from "./trees.js";
 import { createGrass, GRASS_AMOUNT } from "./grass.js";
 import { initBuildingDetail } from "./buildings.js";
 import { loadLandmarkIndex, addLandmarks } from "./landmarks.js";
+import { hasBlenderBuildings, addBlenderBuildings } from "./blenderworld.js";
 
 const status = document.getElementById("status");
 const qualityChip = document.getElementById("quality");
@@ -23,8 +24,8 @@ const scene = new THREE.Scene();
 const camera = new THREE.PerspectiveCamera(70, innerWidth / innerHeight, 0.1, 3000);
 const { sun } = setupAtmosphere(renderer, scene);
 
-const [world, manifest, landmarkIndex] = await Promise.all([
-  fetch("world.json").then((r) => r.json()), loadManifest(), loadLandmarkIndex(), initBuildingDetail(),
+const [world, manifest, landmarkIndex, blenderBuildings] = await Promise.all([
+  fetch("world.json").then((r) => r.json()), loadManifest(), loadLandmarkIndex(), hasBlenderBuildings(), initBuildingDetail(),
 ]);
 const items = (manifest.items || []).filter((i) => SHOW_SPLATS || i.type !== "splat");
 const hiddenBuildings = new Set(items.filter((i) => i.replacesBuilding).map((i) => i.anchor));
@@ -33,8 +34,10 @@ const landmarkTops = new Map();
 for (const L of landmarkIndex) for (const name of L.replaces) { hiddenBuildings.add(name); landmarkTops.set(name, L.top); }
 const replacedSpecies = new Set(items.filter((i) => i.species).map((i) => i.species));
 const capturedPlaces = new Set(items.filter((i) => i.type === "splat").map((i) => i.anchor));
-const info = buildWorld(world, scene, { hiddenBuildings, capturedPlaces, landmarkTops });
+const info = buildWorld(world, scene, { hiddenBuildings, capturedPlaces, landmarkTops, blenderBuildings });
 await addLandmarks(landmarkIndex, scene);
+// Buildings modelled in Blender replace the generated ones when they've been exported.
+if (blenderBuildings) await addBlenderBuildings(scene);
 const zooAnimals = await spawnAnimals(world, scene, { replacedSpecies, capturedPlaces });
 const trees = createTrees(info.trees, scene, renderer);
 const grass = createGrass(world, scene);
@@ -48,8 +51,11 @@ const hud = new Hud(world, info, player);
 const intro = document.getElementById("intro");
 document.getElementById("enter").addEventListener("click", () => player.controls.lock());
 renderer.domElement.addEventListener("click", () => { if (!hud.panelOpen) player.controls.lock(); });
-player.controls.addEventListener("lock", () => { intro.hidden = true; hud.close(); });
-player.controls.addEventListener("unlock", () => { if (!hud.panelOpen) intro.hidden = false; });
+const hint = document.getElementById("hint");
+player.controls.addEventListener("lock", () => { intro.hidden = true; hint.hidden = false; hud.close(); });
+player.controls.addEventListener("unlock", () => { hint.hidden = true; if (!hud.panelOpen) intro.hidden = false; });
+// Closing Places or the map without picking somewhere goes back to the pause card.
+addEventListener("hud-close", () => { if (!player.locked) intro.hidden = false; });
 
 const view = createPipeline(renderer, scene, camera);
 const showQuality = () => {

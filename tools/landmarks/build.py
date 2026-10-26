@@ -22,10 +22,12 @@ INPUT = os.path.join(ROOT, "work", "landmarks", "input.json")
 OUT = os.path.join(ROOT, "public", "assets", "landmarks")
 LOG = os.path.join(ROOT, "work", "landmarks", "build.log")
 
-log_file = open(LOG, "w", encoding="utf-8")
+log_file = None
 
 
 def log(*a):
+    global log_file
+    log_file = log_file or open(LOG, "w", encoding="utf-8")
     print(*a, file=log_file, flush=True)
 
 
@@ -594,9 +596,10 @@ def main():
     log("done")
 
 
-try:
-    main()
-except Exception:
-    import traceback
-    log(traceback.format_exc())
-    log("failed")
+if __name__ == "__main__":  # importable by tools/blender_world/scene.py
+    try:
+        main()
+    except Exception:
+        import traceback
+        log(traceback.format_exc())
+        log("failed")

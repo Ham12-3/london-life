@@ -51,7 +51,7 @@ export function pbr(id, { tile = 2, tint = 0xffffff, colorize = null, vertexTint
   const set = textureSet(id);
   const mesh = mapping === "mesh";
   const { uv, T, B, N } = mesh ? { uv: meshUV().div(tile) } : boxFrame(float(tile));
-  const m = new THREE.MeshStandardNodeMaterial({ side });
+  const m = new THREE.MeshStandardNodeMaterial(side === undefined ? {} : { side });
   const diff = texture(set.diff, uv).rgb;
   let albedo = colorize ? vec3(...colorize).mul(luminance(diff).mul(11))
     : diff.mul(Array.isArray(tint) ? new THREE.Color(...tint) : new THREE.Color(tint));

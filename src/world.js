@@ -273,7 +273,7 @@ export function makeLabel(text, { size = 28, color = "#fff", bg = "rgba(20,30,25
 
 // ---------- world ----------
 
-export function buildWorld(world, scene, { hiddenBuildings = new Set(), capturedPlaces = new Set(), landmarkTops = new Map() } = {}) {
+export function buildWorld(world, scene, { hiddenBuildings = new Set(), capturedPlaces = new Set(), landmarkTops = new Map(), blenderBuildings = false } = {}) {
   const col = new Collision();
   const labels = [];
 
@@ -403,7 +403,8 @@ export function buildWorld(world, scene, { hiddenBuildings = new Set(), captured
     const color = palette[hash(id) % palette.length];
     const finish = wallGeos[b.inZoo ? "render" : WALL_FINISH[color] || "render"];
     // Buildings inside a captured enclosure are part of its splat; keep their walls for collision only.
-    const hidden = hiddenBuildings.has(b.name) || inCaptured(...centreOf(ring.slice(0, -1)));
+    // Drawn elsewhere (a landmark or the Blender-modelled buildings): keep only the collision walls.
+    const hidden = blenderBuildings || hiddenBuildings.has(b.name) || inCaptured(...centreOf(ring.slice(0, -1)));
     const edges = [];
     for (let i = 0; i < ring.length - 1; i++) {
       const a = ring[i], c = ring[i + 1];
@@ -418,7 +419,7 @@ export function buildWorld(world, scene, { hiddenBuildings = new Set(), captured
         for (const [p, q] of gaps) finish.push(paint(wallBox(p[0], p[1], q[0], q[1], DOOR_HEIGHT, b.h, WALL_THICKNESS), color));
     }
     // Plinth, cornice or parapet, windows, door surrounds and (often) a pitched roof: see buildings.js.
-    const style = hidden ? { roof: "flat", top: landmarkTops.get(b.name) ?? b.h } : detail.add(b, id, edges, finish, color);
+    const style = hidden ? { roof: "flat", top: landmarkTops.get(b.name) ?? (blenderBuildings ? b.h + 3 : b.h) } : detail.add(b, id, edges, finish, color);
     if (!hidden) {
       try {
         if (style.roof === "flat") roofGeos.push(paint(flatShape(ring, b.h), b.kind === "cage" ? 0x3a3f3a : 0x5c5852));
@@ -444,9 +445,11 @@ export function buildWorld(world, scene, { hiddenBuildings = new Set(), captured
     walls.castShadow = walls.receiveShadow = true;
     scene.add(walls);
   }
-  const roofs = new THREE.Mesh(mergeGeometries(roofGeos), pbr("concrete_floor_02", { tile: 3, vertexTint: true, side: THREE.DoubleSide }));
-  roofs.castShadow = roofs.receiveShadow = true;
-  scene.add(roofs);
+  if (roofGeos.length) {
+    const roofs = new THREE.Mesh(mergeGeometries(roofGeos), pbr("concrete_floor_02", { tile: 3, vertexTint: true, side: THREE.DoubleSide }));
+    roofs.castShadow = roofs.receiveShadow = true;
+    scene.add(roofs);
+  }
   if (ceilingGeos.length) {
     // Self-lit ceilings stand in for interior lighting (real lights per building cost too much).
     const ceilings = new THREE.Mesh(mergeGeometries(ceilingGeos),

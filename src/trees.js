@@ -2,7 +2,7 @@
 // impostor cards of the same trees further out. Each species variant is generated once and
 // instanced, and trees swap between the two every few metres you walk.
 import * as THREE from "three/webgpu";
-import { positionLocal, time, sin, cos, vec3, vec4, float, instanceIndex, hash, texture, cameraViewMatrix } from "three/tsl";
+import { positionLocal, positionGeometry, time, sin, cos, vec3, vec4, float, instanceIndex, hash, texture, cameraViewMatrix } from "three/tsl";
 import { mergeGeometries } from "three/addons/utils/BufferGeometryUtils.js";
 import { Tree } from "@dgreenheck/ez-tree";
 
@@ -15,19 +15,20 @@ const VARIANTS = [
 export const TREE_RANGE = { high: 90, medium: 65, low: 40 };
 
 function swayNode(leaf) {
-  // positionLocal is in unit-height tree space: sway grows with height squared.
+  // The model is unit height (positionGeometry); sway grows with height squared and is added, in
+  // metres, to the placed position (three applies the instance matrix before positionNode).
   const phase = hash(instanceIndex).mul(6.28);
-  const h = positionLocal.y.clamp(0, 1);
+  const h = positionGeometry.y.clamp(0, 1);
   const bend = h.mul(h);
   const t = time;
   let dx = sin(t.mul(0.9).add(phase)).mul(0.012).mul(bend);
   let dz = cos(t.mul(0.7).add(phase.mul(1.3))).mul(0.008).mul(bend);
   if (leaf) {
-    const flutter = sin(t.mul(5.5).add(positionLocal.x.add(positionLocal.y).add(positionLocal.z).mul(60)).add(phase)).mul(0.0035);
+    const flutter = sin(t.mul(5.5).add(positionGeometry.x.add(positionGeometry.y).add(positionGeometry.z).mul(60)).add(phase)).mul(0.0035);
     dx = dx.add(flutter);
     dz = dz.add(flutter.mul(0.7));
   }
-  return positionLocal.add(vec3(dx, float(0), dz));
+  return positionLocal.add(vec3(dx, float(0), dz).mul(14)); // ~14 m: a typical tree's height
 }
 
 function buildVariant([preset, seed]) {

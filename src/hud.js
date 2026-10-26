@@ -129,6 +129,7 @@ export class Hud {
     const open = panel.hidden;
     this.close();
     if (open) {
+      document.getElementById("intro").hidden = true; // the panel takes the pause card's place
       panel.hidden = false;
       this.player.controls.unlock();
       if (panel === this.places) { this.search.value = ""; this.renderPlaces(); this.search.focus(); }
@@ -137,8 +138,10 @@ export class Hud {
   }
 
   close() {
+    const wasOpen = this.panelOpen;
     this.big.hidden = true;
     this.places.hidden = true;
+    if (wasOpen) dispatchEvent(new Event("hud-close"));
   }
 
   get panelOpen() {

@@ -77,6 +77,31 @@ blender --background --factory-startup --python tools/animals/build.py
 Add species names after `--` to rebuild only those (e.g. `-- clock-tower`). A landmark replaces the
 generated building on its footprint (its walls stay solid for collision).
 
+## The zoo in Blender (live, through the Blender MCP add-on)
+
+With Blender open and the BlenderMCP add-on connected (sidebar > BlenderMCP > Connect), the whole
+zoo is built and refined inside Blender, and the buildings are exported back to the web app.
+`tools/blender_mcp.py` talks to the add-on the same way the MCP server does.
+
+| Path | What |
+| --- | --- |
+| `tools/blender_mcp.py` | `info`, `run <script>`, `shot <png>`, `cmd <type> <json>` against the running add-on |
+| `tools/blender_world/scene.py` | The whole zoo from `world.json`: ground, paths, water, buildings, landmarks, trees, sky, sun, camera |
+| `tools/blender_world/prepare.mjs` | Per building: outline, doorways, window style and roof skeleton (same rules as the web app) |
+| `tools/blender_world/buildings.py` | Buildings with real openings: recessed windows (glass, frames, bars, sills, lintels), doorways and surrounds, front doors, plinths, cornices or parapets, hipped roofs with soffits and fascias |
+| `tools/blender_world/trees_export.mjs`, `trees.py` | The web app's Ez-Tree trees, with bark and leaf textures, at every mapped tree |
+| `tools/blender_world/materials.py` | Poly Haven materials in Blender; `render_settings.py` (Eevee ray tracing), `camera.py`, `view.py` |
+| `tools/blender_world/export.py` | Writes `public/assets/blender/buildings.glb` (Draco); the app then uses it instead of generating buildings |
+
+```bash
+node tools/blender_world/prepare.mjs
+python tools/blender_mcp.py run tools/blender_world/scene.py
+python tools/blender_mcp.py run tools/blender_world/buildings.py
+node tools/blender_world/trees_export.mjs
+python tools/blender_mcp.py run tools/blender_world/trees.py
+python tools/blender_mcp.py run tools/blender_world/export.py
+```
+
 ## Asset pipeline
 
 ### 1. Generate clips in Google Flow
