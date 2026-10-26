@@ -103,6 +103,7 @@ zoo is built and refined inside Blender, and the buildings are exported back to 
 | `tools/blender_world/terrain.py` | Drops the Blender ground, paths and canal onto the height map; builds the canal walls, tunnel ramps, vaulted brick tunnels with stone portals, and bridge parapets and piers |
 | `tools/blender_world/corridors.py`, `export_terrain.py` | Clears the ground out of the open tunnel ramps; exports `public/assets/blender/terrain.glb` for the app |
 | `tools/blender_world/export.py` | Writes `public/assets/blender/buildings.glb` (Draco); the app then uses it instead of generating buildings |
+| `tools/blender_world/save_copy.py`, `bake_ao.py` | Baked lighting: Cycles ambient occlusion (how much open sky each point sees, within 7 m): an atlas each for the buildings and the earthworks on a second UV map (`public/assets/blender/ao_*.jpg`, ~15 and ~7 cm a pixel), and one top-down image of the ground (`public/assets/terrain/ao.jpg`, ~22 cm a pixel); re-exports both GLBs with the second UV map |
 
 ```bash
 node tools/blender_world/prepare.mjs
@@ -111,6 +112,16 @@ python tools/blender_mcp.py run tools/blender_world/buildings.py
 node tools/blender_world/trees_export.mjs
 python tools/blender_mcp.py run tools/blender_world/trees.py
 python tools/blender_mcp.py run tools/blender_world/export.py
+```
+
+The app applies the baked occlusion to sky light only, so the moving sun and its shadows stay live
+while wall bases, doorways, window reveals, the canal cutting, tunnel ramps and the lawn under the
+trees darken the way they do outdoors. Bake on a saved copy of the scene, in the background (about
+40 minutes on a desktop CPU; `-- ground` or `-- atlas` redoes just one part):
+
+```bash
+python tools/blender_mcp.py run tools/blender_world/save_copy.py
+blender --background work/blender/zoo.blend --python tools/blender_world/bake_ao.py
 ```
 
 ## Asset pipeline

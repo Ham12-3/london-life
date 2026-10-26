@@ -44,7 +44,7 @@ const replacedSpecies = new Set(items.filter((i) => i.species).map((i) => i.spec
 const capturedPlaces = new Set(items.filter((i) => i.type === "splat").map((i) => i.anchor));
 const info = buildWorld(world, scene, { hiddenBuildings, capturedPlaces, landmarkTops, blenderBuildings, realFurniture, blenderTerrain });
 // The ground with its levels (the canal cutting, the tunnel ramps), modelled in Blender.
-if (blenderTerrain) await addBlenderTerrain(scene);
+if (blenderTerrain) await addBlenderTerrain(scene, terrain);
 for (const l of info.labels) l.position.y += terrain.heightAt(l.position.x, l.position.z);
 await addLandmarks(landmarkIndex, scene);
 // Buildings modelled in Blender replace the generated ones when they've been exported.

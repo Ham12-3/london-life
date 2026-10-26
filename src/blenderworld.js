@@ -7,6 +7,8 @@ import { DRACOLoader } from "three/addons/loaders/DRACOLoader.js";
 import { pbr } from "./materials.js";
 import { waterMaterial } from "./water.js";
 import { GROUND_STYLE, PATH_STYLE } from "./world.js";
+import { texture, uv, positionWorld } from "three/tsl";
+import { groundAO } from "./terrain.js";
 
 export const BLENDER_BUILDINGS = "assets/blender/buildings.glb";
 export const BLENDER_TERRAIN = "assets/blender/terrain.glb";
@@ -66,17 +68,62 @@ function materialFor(name) {
   const paint = base.match(/^render_([0-9a-f]{6})$/);
   if (paint) m = pbr("white_stucco", { tile: 3, tint: parseInt(paint[1], 16), normalScale: 0.6 });
   else m = FIXED[base] ? FIXED[base]() : null;
+  if (m && base === "glass") m.userData.noAO = true;
   cache.set(base, m);
   return m;
 }
 
-export async function addBlenderTerrain(scene) {
+// Ambient occlusion baked in Blender (tools/blender_world/bake_ao.py) multiplies a material's sky
+// light only: from an atlas on the second UV set (TEXCOORD_1) on buildings and earthworks, from the
+// top-down ground image on the ground and paths. Glass keeps its sky reflections.
+async function loadAtlas(url) {
+  if (!(await exists(url))) return null;
+  const t = await new THREE.TextureLoader().loadAsync(url);
+  t.flipY = false; // glTF UVs
+  t.colorSpace = THREE.SRGBColorSpace;
+  // No mipmaps: they'd bleed the dark room interiors into neighbouring islands at a distance.
+  t.generateMipmaps = false;
+  t.minFilter = THREE.LinearFilter;
+  return t;
+}
+
+const aoCache = new Map();
+function withAO(m, kind, terrain, atlas) {
+  if (m.userData.noAO) return m;
+  const key = `${m.uuid}:${kind}:${atlas?.uuid}`;
+  if (aoCache.has(key)) return aoCache.get(key);
+  const ao = kind === "atlas" ? texture(atlas, uv(1)).r : groundAO(terrain, positionWorld.xz, positionWorld.y);
+  let c;
+  if (m.isNodeMaterial) {
+    c = m.clone();
+    c.aoNode = m.aoNode ? m.aoNode.mul(ao) : ao;
+  } else {
+    c = new THREE.MeshStandardNodeMaterial();
+    c.setValues({ color: m.color, roughness: m.roughness, metalness: m.metalness, side: m.side, transparent: m.transparent,
+      opacity: m.opacity, emissive: m.emissive, map: m.map, alphaTest: m.alphaTest });
+    c.aoNode = ao;
+  }
+  aoCache.set(key, c);
+  return c;
+}
+
+function applyAO(o, terrain, atlas) {
+  const kind = atlas && o.geometry.attributes.uv1 ? "atlas" : /^(Ground|Paths)/.test(o.name) && terrain?.ao ? "ground" : null;
+  if (!kind) return;
+  const set = (m) => withAO(m, kind, terrain, atlas);
+  o.material = Array.isArray(o.material) ? o.material.map(set) : set(o.material);
+}
+
+export async function addBlenderTerrain(scene, terrain) {
   const draco = new DRACOLoader().setDecoderPath("draco/");
-  const gltf = await new GLTFLoader().setDRACOLoader(draco).loadAsync(BLENDER_TERRAIN);
+  const [gltf, atlas] = await Promise.all([
+    new GLTFLoader().setDRACOLoader(draco).loadAsync(BLENDER_TERRAIN), loadAtlas("assets/blender/ao_earthworks.jpg"),
+  ]);
   gltf.scene.traverse((o) => {
     if (!o.isMesh) return;
     const swap = (m) => materialFor(m.name) || m;
     o.material = Array.isArray(o.material) ? o.material.map(swap) : swap(o.material);
+    if (!o.name.startsWith("Water")) applyAO(o, terrain, atlas);
     o.receiveShadow = true;
     o.castShadow = o.name.startsWith("Earthworks");
     if (o.name.startsWith("Earthworks")) {
@@ -93,11 +140,12 @@ export async function addBlenderTerrain(scene) {
 export async function addBlenderBuildings(scene) {
   const draco = new DRACOLoader().setDecoderPath("draco/");
   const loader = new GLTFLoader().setDRACOLoader(draco);
-  const gltf = await loader.loadAsync(BLENDER_BUILDINGS);
+  const [gltf, atlas] = await Promise.all([loader.loadAsync(BLENDER_BUILDINGS), loadAtlas("assets/blender/ao_buildings.jpg")]);
   gltf.scene.traverse((o) => {
     if (!o.isMesh) return;
     const swap = (m) => materialFor(m.name) || m;
     o.material = Array.isArray(o.material) ? o.material.map(swap) : swap(o.material);
+    applyAO(o, null, atlas);
     o.castShadow = o.receiveShadow = true;
   });
   scene.add(gltf.scene);

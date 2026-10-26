@@ -8,6 +8,7 @@ import {
   cameraViewMatrix, positionGeometry,
 } from "three/tsl";
 import { GROUND_STYLE } from "./world.js";
+import { groundAO } from "./terrain.js";
 
 const PATCH = 60; // metres across; blades fade out before the edge
 const DENSITY = 30; // blades per square metre at full quality
@@ -128,7 +129,8 @@ export function createGrass(world, scene, terrain = null) {
   const hue = blade.w.mul(0.35).add(0.8);
   const root = vec3(0.04, 0.075, 0.018), tip = vec3(0.17, 0.28, 0.06), dry = vec3(0.3, 0.29, 0.1);
   material.colorNode = mix(root, mix(tip, dry, step(0.9, blade.z).mul(0.6)), t).mul(hue);
-  material.aoNode = t.mul(0.55).add(0.45);
+  // Darker at the roots, and under trees and beside walls (the occlusion baked in Blender).
+  material.aoNode = t.mul(0.55).add(0.45).mul(groundAO(terrain, wp));
 
   const mesh = new THREE.Mesh(geo, material);
   mesh.frustumCulled = false;
