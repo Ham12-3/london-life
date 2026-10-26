@@ -168,6 +168,9 @@ MATERIALS.update({
     "sandstone": lambda: pbr("sandstone", "red_sandstone_wall", 2.5),
     "steel": lambda: plain("steel", srgb(0x8a8d90), rough=0.35, metal=0.9),
     "rope": lambda: plain("rope", srgb(0x8a7558), rough=0.9),
+    "bronze": lambda: plain("bronze", srgb(0x5a4632), rough=0.38, metal=1.0),
+    "rock_face": lambda: pbr("rock_face", "concrete_floor_02", 3, tint=srgb(0xd8d2c4)),
+    "ledge": lambda: pbr("ledge", "concrete_floor_02", 3, tint=srgb(0xb0aa98)),
 })
 
 
@@ -198,7 +201,7 @@ def landmark(name):
         if kind == "render":
             return pbr(name, "white_stucco", 3, tint=c)
         return plain(name, c, rough=0.45 if kind == "paint" else 0.85)
-    if name.startswith(("sign_", "banner_", "shutter")):
+    if name.startswith(("sign_", "banner_", "shutter", "mosaic_")):
         return picture(name)
     return None
 

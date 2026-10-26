@@ -37,6 +37,9 @@ const LANDMARKS = [
   { id: "rainforest-life", area: "Rainforest Life", within: 2 },
   { id: "land-of-the-lions", area: "Land of the Lions", within: 8 },
   { id: "tiger-territory", area: "Tiger Territory", within: 6, roofsAll: [3.4, 34, 0.9] },
+  // The Mappin Terraces (1914): mapped as a cluster of bare-rock outlines behind the Mappin Pavilion.
+  { id: "mappin-terraces", ground: "rock", box: [-165, -55, 0, 70], label: "Mappin Terraces" },
+  { id: "guy-the-gorilla", poi: "Guy the Gorilla" },
 ];
 
 const centroid = (r) => [r.slice(0, -1).reduce((s, p) => s + p[0], 0) / (r.length - 1), r.slice(0, -1).reduce((s, p) => s + p[1], 0) / (r.length - 1)];
@@ -95,7 +98,20 @@ await SkeletonBuilder.init();
 const out = [];
 for (const L of LANDMARKS) {
   let src, replaces = [];
-  if (L.within) {
+  if (L.poi) {
+    const p = world.pois.find((x) => x.name === L.poi);
+    if (!p) { console.warn(`missing ${L.poi}`); continue; }
+    out.push({ id: L.id, name: L.poi, origin: [p.x, p.z], footprints: [], roofs: [], replaces: [] });
+    console.log(`${L.id}: at ${p.x.toFixed(1)}, ${p.z.toFixed(1)}`);
+    continue;
+  }
+  if (L.ground) {
+    const [x0, x1, z0, z1] = L.box;
+    src = world.ground.filter((g) => {
+      const [x, z] = centroid(g.pts);
+      return g.kind === L.ground && x > x0 && x < x1 && z > z0 && z < z1;
+    }).sort((a, b) => Math.abs(area(b.pts)) - Math.abs(area(a.pts)));
+  } else if (L.within) {
     const a = world.areas.find((x) => x.name === L.area);
     if (!a) { console.warn(`missing ${L.area}`); continue; }
     // Buildings inside the area, or within `within` metres of its outline (gates, houses on the edge).

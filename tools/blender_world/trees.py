@@ -13,6 +13,9 @@ ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
 SRC = os.path.join(ROOT, "work", "blender", "trees")
 variants = json.load(open(os.path.join(SRC, "trees.json")))
 world = json.load(open(os.path.join(ROOT, "public", "world.json"), encoding="utf-8"))
+# Plus the trees the landmark models add (the plane trees at the main gates), as the web app does.
+for L in json.load(open(os.path.join(ROOT, "public", "assets", "landmarks", "landmarks.json"))):
+    world["trees"] += L.get("trees", [])
 
 
 def srgb(h):

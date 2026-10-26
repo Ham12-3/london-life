@@ -502,6 +502,13 @@ export function buildWorld(world, scene, { hiddenBuildings = new Set(), captured
     scene.add(m);
   }
 
+  // Solid outlines that landmark models bring (rock mountains, plinths).
+  for (const poly of world.solid || [])
+    for (let i = 0; i < poly.length; i++) {
+      const a = poly[i], c = poly[(i + 1) % poly.length];
+      col.addSegment(a[0], a[1], c[0], c[1]);
+    }
+
   // Trees: trunks are solid; the trees themselves are drawn by trees.js.
   const trees = world.trees.filter(([x, z]) => !inCaptured(x, z));
   for (const [x, z] of trees) col.addCircle(x, z, 0.4);

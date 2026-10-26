@@ -10,6 +10,7 @@ public/assets/landmarks/landmarks.json lists where each goes and which generic b
 Blender axes: x east, y north, z up. glTF export turns that into three.js's x east, y up, z south.
 """
 import bpy
+import importlib.util
 import json
 import math
 import os
@@ -222,7 +223,7 @@ class Builder:
                 if len(part) >= 3:
                     self.face(part, m)
 
-    def build(self, name, bevel=0.0):
+    def build(self, name, bevel=0.0, rocky=0.0):
         mesh = bpy.data.meshes.new(name)
         mesh.from_pydata(self.verts, [], self.faces)
         mesh.update()
@@ -237,6 +238,19 @@ class Builder:
                 uv.data[li].uv = (s, t)
         obj = bpy.data.objects.new(name, mesh)
         bpy.context.scene.collection.objects.link(obj)
+        if rocky:
+            # Concrete cast as rock: subdivide, then push the surface in and out with cloud noise.
+            sub = obj.modifiers.new("Subdivide", "SUBSURF")
+            sub.subdivision_type = "SIMPLE"
+            sub.levels = sub.render_levels = 2
+            tex = bpy.data.textures.new(name + "_crags", "CLOUDS")
+            tex.noise_scale = 1.1
+            tex.noise_depth = 3
+            disp = obj.modifiers.new("Crags", "DISPLACE")
+            disp.texture = tex
+            disp.texture_coords = "GLOBAL"
+            disp.strength = rocky
+            disp.mid_level = 0.5
         if bevel:
             m = obj.modifiers.new("Bevel", "BEVEL")
             m.width = bevel
@@ -668,6 +682,16 @@ def main_entrance(L, B):
     for u in [c0 + 0.3 + i * (c1 - c0 - 0.6) / 3 for i in range(4)]:
         px, py, _ = q(u, depth - 0.15, 0)
         B.tube((px, py, 0), (px, py, 3.17), 0.07, "paint_2b302d", 10)
+    # The paved forecourt out to the road (it's grass on the map), with the mosaics on the lodges.
+    fore = [at(-9, 0.3), at(Lf + 9, 0.3), at(Lf + 9, 8.5), at(-9, 8.5)]
+    B.face([(x, y, 0.08) for x, y in fore[::-1]], "paving")  # wound to face up
+    for u, art in ((1.6, "mosaic_penguins"), (Lf - 1.6, "mosaic_monkeys")):
+        lx, ly = at(u, 0.6 + 0.03)
+        p0 = (lx - ux * 1.3, ly - uy * 1.3)
+        p1 = (lx + ux * 1.3, ly + uy * 1.3)
+        B.face([(p0[0], p0[1], 1.0), (p1[0], p1[1], 1.0), (p1[0], p1[1], 2.95), (p0[0], p0[1], 2.95)], art, uvs=SIGN_UV)
+        B.box(((p0[0] + p1[0]) / 2 + nx * 0.02, (p0[1] + p1[1]) / 2 + ny * 0.02, 0.95), (2.8, 0.1, 0.1), yaw, "stone")
+    trees = [(*at(-6.5, 5.0), 21.0), (*at(Lf + 6.5, 5.5), 19.0), (*at(Lf / 2 - 3, -9), 17.0)]
     # Crook lamp posts with banners, out on the pavement.
     for u in (-2.5, Lf + 2.5):
         px, py = at(u, 4.0)
@@ -675,7 +699,7 @@ def main_entrance(L, B):
         B.polyline_tube(crook, 0.06, "paint_e8e8e2", 8)
         bx, by = px + ux * 0.12, py + uy * 0.12
         B.face([(bx, by, 2.6), (bx + ux * 0.6, by + uy * 0.6, 2.6), (bx + ux * 0.6, by + uy * 0.6, 4.6), (bx, by, 4.6)], "fabric_1f6b3a")
-    return {"top": 8.6}
+    return {"top": 8.6, "clear": [fore], "trees": trees}
 
 
 def reptile_house(L, B):
@@ -986,15 +1010,114 @@ def tiger_territory(L, B):
     return {"top": 17.5}
 
 
+def mappin_terraces(L, B):
+    """The Mappin Terraces (John James Joass and Peter Chalmers Mitchell, 1913-14): artificial
+    mountains of reinforced concrete cast as rock, climbing in terraces to craggy peaks (the tallest,
+    Bear Mountain, about 20 m). Each mapped rock outline becomes one mountain: ledges stepping in and
+    up, cliff faces broken into strata, a crag on top."""
+    rnd = __import__("random").Random(1914)
+    solid = []
+    top = 0.0
+    for fp in L["footprints"]:
+        P = ccw(ring(fp))
+        A = abs(area2(P))
+        if A < 25:
+            continue
+        P = resample(P, 2.0)  # even spacing, so the cliffs can be broken up
+        solid.append(P)
+        # Broad ledges and modest heights: terraces you could picture goats and bears on.
+        H = max(2.5, min(19.0, math.sqrt(A) * 0.42 + 1.5))
+        step = max(1.5, min(3.5, math.sqrt(A) / 8))
+        rings, heights = [P], [0.0]
+        k = 1
+        while k < 14:
+            R = offset(rings[0], -step * k)
+            if area2(R) < 6 or area2(R) > area2(rings[-1]):
+                break
+            rings.append(R)
+            k += 1
+        K = len(rings)
+        heights = [H * (i / max(1, K - 1)) ** 0.85 for i in range(K)]
+        heights[0] = 0.0
+        # Crags: each ledge edge wanders in and out a little.
+        rings = [[(x + rnd.uniform(-0.35, 0.35), y + rnd.uniform(-0.35, 0.35)) for x, y in r] for r in rings]
+        for i in range(K):
+            r = rings[i]
+            z0 = heights[i - 1] if i else 0.0
+            z1 = heights[i] if i else min(heights[1] if K > 1 else H, 1.6)
+            n = len(r)
+            for j in range(n):
+                a, b = r[j], r[(j + 1) % n]
+                zm = (z0 + z1) / 2 + rnd.uniform(-0.2, 0.2)
+                lean = 0.15
+                mid_a = (a[0] - (a[0] - centroid(r)[0]) * 0.0, a[1], zm)
+                # Cliff in two strata, the upper set back a little like a weathered rock band.
+                ca, cb = centroid(r), centroid(r)
+                ia = (a[0] + (ca[0] - a[0]) * lean / max(1, math.dist(a, ca)), a[1] + (ca[1] - a[1]) * lean / max(1, math.dist(a, ca)))
+                ib = (b[0] + (cb[0] - b[0]) * lean / max(1, math.dist(b, cb)), b[1] + (cb[1] - b[1]) * lean / max(1, math.dist(b, cb)))
+                B.face([(a[0], a[1], z0), (b[0], b[1], z0), (b[0], b[1], zm), (a[0], a[1], zm)], "rock_face")
+                B.face([(a[0], a[1], zm), (b[0], b[1], zm), (ib[0], ib[1], z1), (ia[0], ia[1], z1)], "rock_face")
+                if i + 1 < K:  # the ledge from this cliff top back to the next one
+                    nr = rings[i + 1]
+                    c, d = nr[j], nr[(j + 1) % n]
+                    B.face([(ia[0], ia[1], z1), (ib[0], ib[1], z1), (d[0], d[1], z1), (c[0], c[1], z1)], "ledge")
+            del mid_a
+        # Summit crag.
+        last = rings[-1]
+        cx, cy = centroid(last)
+        zt = heights[-1] if K > 1 else 1.6
+        peak = (cx + rnd.uniform(-0.5, 0.5), cy + rnd.uniform(-0.5, 0.5), zt + max(1.2, step * 1.4))
+        for j in range(len(last)):
+            a, b = last[j], last[(j + 1) % len(last)]
+            B.face([(a[0], a[1], zt), (b[0], b[1], zt), peak], "rock_face")
+        top = max(top, peak[2])
+    return {"top": top + 1, "solid": solid}
+
+
+def guy_the_gorilla(L, B):
+    """Guy the Gorilla (William Timym, 1982), in bronze on a stone plinth near the main entrance."""
+    spec = importlib.util.spec_from_file_location("animal_build", os.path.join(ROOT, "tools", "animals", "build.py"))
+    ab = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(ab)
+    s = ab.Skel()
+    ab.ape(s, L=0.9, H=1.5, R=0.33, legR=0.11)
+    mesh = bpy.data.meshes.new("guy_skel")
+    mesh.from_pydata(s.v, s.e, [])
+    obj = bpy.data.objects.new("guy_skel", mesh)
+    bpy.context.scene.collection.objects.link(obj)
+    obj.modifiers.new("Skin", "SKIN")
+    layer = mesh.skin_vertices[0].data
+    for i, r in enumerate(s.r):
+        layer[i].radius = r
+    layer[0].use_root = True
+    sub = obj.modifiers.new("Subdivision", "SUBSURF")
+    sub.levels = 2
+    body = bpy.data.meshes.new_from_object(obj.evaluated_get(bpy.context.evaluated_depsgraph_get()))
+    bpy.data.objects.remove(obj)
+    scale, yaw, base = 1.25, math.radians(200), 0.95
+    cs, sn = math.cos(yaw), math.sin(yaw)
+    verts = [((v.co.x * cs - v.co.y * sn) * scale, (v.co.x * sn + v.co.y * cs) * scale, v.co.z * scale + base) for v in body.vertices]
+    B.shared(verts, [list(p.vertices) for p in body.polygons], "bronze", lambda p: (p[0], p[2]))
+    bpy.data.meshes.remove(body)
+    B.box((0, 0, 0.45), (2.3, 1.3, 0.9), yaw, "stone")
+    B.box((0, 0, 0.93), (2.45, 1.45, 0.08), yaw, "stone")
+    return {"top": 3.2, "solid": [[(x, y) for x, y in ((-1.2, -0.7), (1.2, -0.7), (1.2, 0.7), (-1.2, 0.7))]]}
+
+
 BUILDERS = {
     "penguin-pool": penguin_pool, "snowdon-aviary": snowdon_aviary, "casson-pavilion": casson_pavilion,
     "clock-tower": clock_tower, "giraffe-house": giraffe_house, "raven-cage": raven_cage,
     "blackburn-pavilion": blackburn_pavilion, "main-entrance": main_entrance, "reptile-house": reptile_house,
     "gorilla-kingdom": gorilla_kingdom, "rainforest-life": rainforest_life, "land-of-the-lions": land_of_the_lions,
-    "tiger-territory": tiger_territory,
+    "tiger-territory": tiger_territory, "mappin-terraces": mappin_terraces, "guy-the-gorilla": guy_the_gorilla,
 }
 BEVEL = {"penguin-pool": 0.03, "casson-pavilion": 0.03, "giraffe-house": 0.02, "clock-tower": 0.015, "blackburn-pavilion": 0.02,
          "reptile-house": 0.02}
+
+
+def to_world(L, p):
+    """Local Blender (x, y) -> world.json (x, z)."""
+    return [round(p[0] + L["origin"][0], 2), round(-p[1] + L["origin"][1], 2)]
 
 
 def main():
@@ -1009,17 +1132,21 @@ def main():
             continue
         B = Builder()
         info = BUILDERS[L["id"]](L, B)
-        obj = B.build(L["id"], BEVEL.get(L["id"], 0))
+        obj = B.build(L["id"], BEVEL.get(L["id"], 0), rocky=0.9 if L["id"] == "mappin-terraces" else 0.0)
         for o in bpy.context.scene.objects:
             o.select_set(o == obj)
         bpy.context.view_layer.objects.active = obj
         path = os.path.join(OUT, L["id"] + ".glb")
-        bpy.ops.export_scene.gltf(filepath=path, export_format="GLB", use_selection=True, export_apply=True, export_yup=True)
+        bpy.ops.export_scene.gltf(filepath=path, export_format="GLB", use_selection=True, export_apply=True, export_yup=True,
+                                  export_draco_mesh_compression_enable=True, export_draco_mesh_compression_level=7)
         tris = sum(len(p.vertices) - 2 for p in obj.data.polygons)
         log(f"{L['id']}: {len(obj.data.vertices)} verts, ~{tris} tris, materials {B.names} -> {os.path.getsize(path) // 1024} KB")
         index[L["id"]] = {
             "id": L["id"], "name": L["name"], "url": f"assets/landmarks/{L['id']}.glb", "origin": L["origin"],
             "replaces": L.get("replaces", []), "top": round(info["top"], 2),
+            # Extras for the app, in world x/z: ground kept clear of grass, more trees, solid outlines.
+            **{k: [[to_world(L, p) for p in poly] for poly in info[k]] for k in ("clear", "solid") if info.get(k)},
+            **({"trees": [[*to_world(L, (x, y)), h] for x, y, h in info["trees"]]} if info.get("trees") else {}),
         }
         bpy.data.objects.remove(obj)
     json.dump(list(index.values()), open(index_path, "w"), indent=1)

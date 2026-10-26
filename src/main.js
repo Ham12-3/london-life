@@ -32,6 +32,11 @@ const hiddenBuildings = new Set(items.filter((i) => i.replacesBuilding).map((i) 
 // Landmarks modelled in Blender stand in for the generated buildings on their footprints.
 const landmarkTops = new Map();
 for (const L of landmarkIndex) for (const name of L.replaces) { hiddenBuildings.add(name); landmarkTops.set(name, L.top); }
+// Landmarks also bring extra trees (the plane trees at the gates), ground to keep clear of grass
+// (paved forecourts) and solid outlines (the Mappin Terraces, statue plinths).
+world.trees.push(...landmarkIndex.flatMap((L) => L.trees || []));
+world.clear = landmarkIndex.flatMap((L) => L.clear || []);
+world.solid = landmarkIndex.flatMap((L) => L.solid || []);
 const replacedSpecies = new Set(items.filter((i) => i.species).map((i) => i.species));
 const capturedPlaces = new Set(items.filter((i) => i.type === "splat").map((i) => i.anchor));
 const info = buildWorld(world, scene, { hiddenBuildings, capturedPlaces, landmarkTops, blenderBuildings });

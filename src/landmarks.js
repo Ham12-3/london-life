@@ -3,6 +3,7 @@
 // of the zoo here, so a Blender model and a generated building of the same brick look the same.
 import * as THREE from "three/webgpu";
 import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
+import { DRACOLoader } from "three/addons/loaders/DRACOLoader.js";
 import { pbr } from "./materials.js";
 import { waterMaterial } from "./water.js";
 
@@ -117,6 +118,11 @@ function landmarkMaterials() {
     steel: std({ color: 0x8a8d90, roughness: 0.35, metalness: 0.9 }),
     rope: std({ color: 0x8a7558, roughness: 0.9 }),
     water: waterMaterial(),
+    paving: pbr("concrete_pavement", { tile: 3, tint: 0xf0ece4 }),
+    bronze: std({ color: 0x5a4632, roughness: 0.38, metalness: 1 }),
+    // Concrete cast as rock: buff-grey, not mossy.
+    rock_face: pbr("concrete_floor_02", { tile: 3, tint: 0xd8d2c4 }),
+    ledge: pbr("concrete_floor_02", { tile: 3, tint: 0xb0aa98 }),
   });
   return materials;
 }
@@ -143,7 +149,7 @@ function materialFor(name) {
     if (m[1] === "render") made = pbr("white_stucco", { tile: 3, tint: c, normalScale: 0.7 });
     else if (m[1] === "paint") made = new THREE.MeshStandardMaterial({ color: c, roughness: 0.45 });
     else made = new THREE.MeshStandardMaterial({ color: c, roughness: 0.85, side: THREE.DoubleSide });
-  } else if (/^(sign_|banner_|shutter)/.test(base)) {
+  } else if (/^(sign_|banner_|shutter|mosaic_)/.test(base)) {
     made = imageMaterial(base);
   }
   if (made) mats[base] = made;
@@ -151,7 +157,7 @@ function materialFor(name) {
 }
 
 export async function addLandmarks(index, scene) {
-  const loader = new GLTFLoader();
+  const loader = new GLTFLoader().setDRACOLoader(new DRACOLoader().setDecoderPath("draco/")); // models are Draco-compressed
   const groups = await Promise.all(index.map(async (L) => {
     try {
       const gltf = await loader.loadAsync(L.url);

@@ -136,6 +136,62 @@ def shutter():
     im.save(os.path.join(OUT, "shutter.png"))
 
 
+def mosaic(name, draw_scene, cells=(96, 72), tile=11):
+    """A tile mosaic: the picture is drawn at one pixel per tessera, then laid as tiles with grout."""
+    w, h = cells
+    small = Image.new("RGB", cells)
+    draw_scene(ImageDraw.Draw(small), w, h)
+    rnd = random.Random(name)
+    im = Image.new("RGB", (w * tile, h * tile), (196, 190, 178))
+    d = ImageDraw.Draw(im)
+    px = small.load()
+    for y in range(h):
+        for x in range(w):
+            r, g, b = px[x, y]
+            j = rnd.randint(-12, 12)
+            ox, oy = rnd.randint(-1, 1), rnd.randint(-1, 1)
+            d.rectangle((x * tile + 1 + ox, y * tile + 1 + oy, x * tile + tile - 2 + ox, y * tile + tile - 2 + oy),
+                        fill=(max(0, min(255, r + j)), max(0, min(255, g + j)), max(0, min(255, b + j))))
+    im.save(os.path.join(OUT, name))
+
+
+def penguins(d, w, h):
+    """Humboldt penguins on a rocky beach by blue water."""
+    d.rectangle((0, 0, w, h), fill=(150, 196, 226))
+    d.rectangle((0, h * 0.55, w, h), fill=(40, 110, 170))
+    d.polygon([(0, h * 0.7), (w * 0.3, h * 0.58), (w * 0.55, h * 0.75), (w, h * 0.62), (w, h), (0, h)], fill=(196, 176, 140))
+    for x0, y0, s in ((14, 22, 1.0), (40, 18, 1.15), (66, 26, 0.95)):
+        d.ellipse((x0, y0, x0 + 14 * s, y0 + 36 * s), fill=(24, 24, 28))
+        d.ellipse((x0 + 4 * s, y0 + 10 * s, x0 + 13 * s, y0 + 34 * s), fill=(240, 240, 236))
+        d.ellipse((x0 + 3 * s, y0 - 7 * s, x0 + 13 * s, y0 + 4 * s), fill=(24, 24, 28))
+        d.line((x0 + 4 * s, y0 - 1 * s, x0 + 12 * s, y0 + 2 * s), fill=(240, 240, 236))
+        d.polygon([(x0 + 12 * s, y0 - 3 * s), (x0 + 18 * s, y0 - 1 * s), (x0 + 12 * s, y0 + 1 * s)], fill=(60, 50, 50))
+        d.rectangle((x0 + 3 * s, y0 + 36 * s, x0 + 11 * s, y0 + 38 * s), fill=(200, 120, 120))
+
+
+def monkeys(d, w, h):
+    """Squirrel monkeys in the canopy."""
+    d.rectangle((0, 0, w, h), fill=(48, 110, 52))
+    rnd = random.Random(5)
+    for _ in range(160):
+        x, y = rnd.uniform(0, w), rnd.uniform(0, h)
+        d.ellipse((x, y, x + rnd.uniform(4, 9), y + rnd.uniform(3, 6)), fill=(rnd.randint(40, 90), rnd.randint(120, 175), rnd.randint(40, 80)))
+    d.line((0, h * 0.62, w, h * 0.5), fill=(110, 80, 50), width=4)
+    d.line((w * 0.2, h, w * 0.45, h * 0.55), fill=(110, 80, 50), width=3)
+    for x0, y0 in ((18, 28), (52, 22)):
+        d.ellipse((x0, y0, x0 + 20, y0 + 14), fill=(214, 168, 70))
+        d.ellipse((x0 + 14, y0 - 9, x0 + 26, y0 + 3), fill=(220, 210, 180))
+        d.ellipse((x0 + 17, y0 - 6, x0 + 20, y0 - 3), fill=(30, 30, 30))
+        d.ellipse((x0 + 21, y0 - 6, x0 + 24, y0 - 3), fill=(30, 30, 30))
+        d.ellipse((x0 + 16, y0 - 11, x0 + 24, y0 - 7), fill=(40, 40, 40))
+        d.line((x0, y0 + 8, x0 - 10, y0 + 26), fill=(150, 120, 70), width=2)
+        d.line((x0 - 10, y0 + 26, x0 - 4, y0 + 32), fill=(40, 40, 40), width=2)
+        for lx in (x0 + 4, x0 + 16):
+            d.line((lx, y0 + 12, lx, y0 + 20), fill=(214, 168, 70), width=2)
+
+
+mosaic("mosaic_penguins.png", penguins)
+mosaic("mosaic_monkeys.png", monkeys)
 zoo_banner()
 carved("REPTILE HOUSE", "sign_reptile.png")
 carved("PENGUIN POOL", "sign_penguin.png")

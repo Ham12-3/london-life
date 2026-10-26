@@ -19,11 +19,14 @@ import sys
 ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
 OUT = os.path.join(ROOT, "public", "assets", "animals")
 LOG = os.path.join(ROOT, "work", "animals.log")
-os.makedirs(os.path.dirname(LOG), exist_ok=True)
-log_file = open(LOG, "w", encoding="utf-8")
+log_file = None
 
 
 def log(*a):
+    global log_file
+    if log_file is None:
+        os.makedirs(os.path.dirname(LOG), exist_ok=True)
+        log_file = open(LOG, "w", encoding="utf-8")
     print(*a, file=log_file, flush=True)
 
 
@@ -294,9 +297,10 @@ def main():
     log("done")
 
 
-try:
-    main()
-except Exception:
-    import traceback
-    log(traceback.format_exc())
-    log("failed")
+if __name__ == "__main__":  # importable (the bronze gorilla statue in tools/landmarks reuses the gorilla)
+    try:
+        main()
+    except Exception:
+        import traceback
+        log(traceback.format_exc())
+        log("failed")

@@ -43,6 +43,7 @@ function densityMask(world) {
   for (const p of world.paths) if (!p.tunnel && p.pts.length > 1) line(p.pts, p.w + 0.5, "#000");
   for (const b of world.bridges) (b.line ? line(b.line, b.w, "#000") : poly(b.pts, "#000"));
   for (const b of world.buildings) poly(b.pts, "#000");
+  for (const c of world.clear || []) poly(c, "#000"); // paved forecourts from landmark models
   const t = new THREE.CanvasTexture(c);
   t.flipY = false;
   t.colorSpace = THREE.NoColorSpace;
