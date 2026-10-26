@@ -16,6 +16,9 @@ export class Player {
     this.keys = new Set();
     this.fly = false;
     this.bob = 0;
+    // Ground level under the walker (terrain.js sets surfaceAt); feet follow it smoothly.
+    this.ground = { surfaceAt: () => 0 };
+    this.feet = 0;
     camera.position.y = EYE;
     addEventListener("keydown", (e) => {
       if (e.target instanceof HTMLInputElement) return;
@@ -32,11 +35,16 @@ export class Player {
 
   toggleFly() {
     this.fly = !this.fly;
-    if (!this.fly) this.camera.position.y = EYE;
+    if (!this.fly) {
+      const p = this.camera.position;
+      this.feet = this.ground.surfaceAt(p.x, p.z, 0);
+      p.y = this.feet + EYE;
+    }
   }
 
   teleport(x, z, lookX, lookZ) {
-    this.camera.position.set(x, this.fly ? this.camera.position.y : EYE, z);
+    this.feet = this.ground.surfaceAt(x, z, 0);
+    this.camera.position.set(x, this.fly ? this.camera.position.y : this.feet + EYE, z);
     if (lookX !== undefined) this.camera.lookAt(lookX, this.camera.position.y, lookZ);
   }
 
@@ -56,12 +64,12 @@ export class Player {
       const speed = FLY * (k.has("ShiftLeft") || k.has("ShiftRight") ? 3 : 1) * dt;
       this.controls.moveForward(fwd * speed);
       this.controls.moveRight(side * speed);
-      pos.y = Math.max(EYE, pos.y + up * speed);
+      pos.y = Math.max(this.ground.surfaceAt(pos.x, pos.z, 0) + EYE, pos.y + up * speed);
       return;
     }
     if (!fwd && !side) {
       this.bob *= 0.9;
-      pos.y = EYE + Math.sin(this.bob) * 0.02;
+      pos.y = this.feet + EYE + Math.sin(this.bob) * 0.02;
       return;
     }
     const sprint = k.has("ShiftLeft") || k.has("ShiftRight");
@@ -79,7 +87,10 @@ export class Player {
     }
     pos.x = x;
     pos.z = z;
+    // Down the canal banks, into the tunnel ramps: ease the feet onto the ground.
+    const g = this.ground.surfaceAt(x, z, this.feet);
+    this.feet += (g - this.feet) * Math.min(1, dt * 10);
     this.bob += dt * (sprint ? 14 : 9);
-    pos.y = EYE + Math.sin(this.bob) * (sprint ? 0.06 : 0.035);
+    pos.y = this.feet + EYE + Math.sin(this.bob) * (sprint ? 0.06 : 0.035);
   }
 }

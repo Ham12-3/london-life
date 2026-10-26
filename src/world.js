@@ -273,7 +273,7 @@ export function makeLabel(text, { size = 28, color = "#fff", bg = "rgba(20,30,25
 
 // ---------- world ----------
 
-export function buildWorld(world, scene, { hiddenBuildings = new Set(), capturedPlaces = new Set(), landmarkTops = new Map(), blenderBuildings = false, realFurniture = false } = {}) {
+export function buildWorld(world, scene, { hiddenBuildings = new Set(), capturedPlaces = new Set(), landmarkTops = new Map(), blenderBuildings = false, realFurniture = false, blenderTerrain = false } = {}) {
   const col = new Collision();
   const labels = [];
 
@@ -286,18 +286,22 @@ export function buildWorld(world, scene, { hiddenBuildings = new Set(), captured
     x >= c.bb.minX && x <= c.bb.maxX && z >= c.bb.minZ && z <= c.bb.maxZ && pointInPoly(c.pts, x, z));
   const centreOf = (pts) => [pts.reduce((s, p) => s + p[0], 0) / pts.length, pts.reduce((s, p) => s + p[1], 0) / pts.length];
 
+  // Ground, land cover, water, bridges and paths: drawn here unless the Blender terrain (with the
+  // canal cutting and tunnel ramps) replaces them; their collision and water checks stay either way.
+  const ground = blenderTerrain ? new THREE.Group() : scene;
+
   // Base ground: Regent's Park lawns stretching to the fog.
   const base = new THREE.Mesh(new THREE.PlaneGeometry(4000, 4000), pbr("sparse_grass", { tile: 3, colorize: [0.075, 0.13, 0.03] }));
   base.rotation.x = -Math.PI / 2;
   base.receiveShadow = true;
-  scene.add(base);
+  ground.add(base);
 
   // Zoo grounds are mostly paved/gravel between attractions.
   const zooGround = world.zoo.map((r) => flatShape(r, 0.005));
   if (zooGround.length) {
     const m = new THREE.Mesh(mergeGeometries(zooGround), pbr("sparse_grass", { tile: 3, colorize: [0.085, 0.12, 0.04] }));
     m.receiveShadow = true;
-    scene.add(m);
+    ground.add(m);
   }
 
   // Land cover.
@@ -312,7 +316,7 @@ export function buildWorld(world, scene, { hiddenBuildings = new Set(), captured
   for (const [kind, geos] of Object.entries(byKind)) {
     const m = new THREE.Mesh(mergeGeometries(geos), pbr(GROUND_STYLE[kind].tex, GROUND_STYLE[kind]));
     m.receiveShadow = true;
-    scene.add(m);
+    ground.add(m);
   }
 
   // Water: ponds, moats, pools and the Regent's Canal.
@@ -330,7 +334,7 @@ export function buildWorld(world, scene, { hiddenBuildings = new Set(), captured
     const water = new THREE.Mesh(mergeGeometries(waterGeos.map((g) => { g.deleteAttribute("uv"); return g; })),
       waterMaterial());
     water.receiveShadow = true;
-    scene.add(water);
+    ground.add(water);
   }
 
   // Bridges over water.
@@ -344,7 +348,7 @@ export function buildWorld(world, scene, { hiddenBuildings = new Set(), captured
     const bridges = new THREE.Mesh(mergeGeometries(bridgeGeos.map((g) => { g.deleteAttribute("uv"); return g; })),
       pbr("wood_planks", { tile: 2, tint: 0xd8d0c4 }));
     bridges.receiveShadow = true;
-    scene.add(bridges);
+    ground.add(bridges);
   }
 
   // Paths and roads.
@@ -357,7 +361,7 @@ export function buildWorld(world, scene, { hiddenBuildings = new Set(), captured
   for (const [kind, geos] of Object.entries(pathGeos)) {
     const m = new THREE.Mesh(mergeGeometries(geos), pbr(PATH_STYLE[kind].tex, PATH_STYLE[kind]));
     m.receiveShadow = true;
-    scene.add(m);
+    ground.add(m);
   }
 
   // Path vertices, used to pick doorways and teleport targets.

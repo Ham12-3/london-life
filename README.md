@@ -48,6 +48,7 @@ Add `?gpu` to the URL to turn on GPU timers (`zoo.renderer.info.render.timestamp
 | `src/water.js` | Ponds and canal: drifting ripples with sky reflections |
 | `tools/fetch_textures.py` | Downloads the CC0 Poly Haven textures (1k) and the three.js water normal map |
 | `src/animals.js` | Animals per enclosure: Blender models, one instanced draw per species, legs swung on the GPU as they walk |
+| `src/terrain.js` | Ground levels: `heightAt` for everything standing on the ground, and the tunnel floor under the Outer Circle for walkers who came down the ramp |
 | `src/furniture.js` | Blender-modelled benches, bins, Victorian lamp posts, fountains, picnic tables, cycle stands (instanced) and railings (drawn within 70 m) |
 | `src/landmarks.js` | Loads the Blender landmark models and gives their surfaces the zoo's PBR materials |
 | `src/player.js` | First-person controller and collision |
@@ -98,6 +99,9 @@ zoo is built and refined inside Blender, and the buildings are exported back to 
 | `tools/blender_world/materials.py` | Poly Haven materials in Blender; `render_settings.py` (Eevee ray tracing), `camera.py`, `view.py` |
 | `tools/blender_world/landmarks_reload.py` | Reloads rebuilt landmark models into the Blender zoo without rebuilding the scene |
 | `tools/blender_world/furniture.py` | Places the furniture and railings in the Blender zoo from the same placements |
+| `tools/terrain/height.py` | The height map: the Regent's Canal in its cutting (water 5.5 m down, towpath, banks) and the tunnel ramps under the Outer Circle; ground level under buildings (`public/assets/terrain/`) |
+| `tools/blender_world/terrain.py` | Drops the Blender ground, paths and canal onto the height map; builds the canal walls, tunnel ramps, vaulted brick tunnels with stone portals, and bridge parapets and piers |
+| `tools/blender_world/corridors.py`, `export_terrain.py` | Clears the ground out of the open tunnel ramps; exports `public/assets/blender/terrain.glb` for the app |
 | `tools/blender_world/export.py` | Writes `public/assets/blender/buildings.glb` (Draco); the app then uses it instead of generating buildings |
 
 ```bash

@@ -128,7 +128,7 @@ async function loadTextures() {
   return { planeBark, planeBarkNormal, planeLeaf };
 }
 
-export async function createTrees(trees, scene, renderer) {
+export async function createTrees(trees, scene, renderer, terrain = { heightAt: () => 0 }) {
   const textures = await loadTextures(); // before the impostors are baked from these trees
   const variants = VARIANTS.map((v) => buildVariant(v, textures));
   const meshes = variants.map((v) => {
@@ -152,7 +152,7 @@ export async function createTrees(trees, scene, renderer) {
   const placed = trees.map(([x, z, h], i) => {
     const r = Math.abs(Math.sin(x * 12.9898 + z * 78.233)) % 1;
     const height = h * (0.9 + r * 0.25);
-    const matrix = m4.compose(pos.set(x, 0, z), q.setFromAxisAngle(up, r * 6.28), sc.set(height, height, height)).clone();
+    const matrix = m4.compose(pos.set(x, terrain.heightAt(x, z), z), q.setFromAxisAngle(up, r * 6.28), sc.set(height, height, height)).clone();
     // London planes for 40% of trees; the rest cycle through the other species.
     return { x, z, matrix, variant: (Math.abs(Math.sin(x * 4.17 + z * 9.31)) % 1) < PLANE_SHARE ? PLANE : i % PLANE };
   });

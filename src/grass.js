@@ -40,7 +40,7 @@ function densityMask(world) {
   for (const r of world.zoo) poly(r, grey(0.7));
   for (const gp of world.ground) if (GROUND_STYLE[gp.kind]) poly(gp.pts, grey(GROUND_STYLE[gp.kind].grass));
   for (const w of world.water) (w.line ? line(w.line, w.w + 1, "#000") : poly(w.pts, "#000"));
-  for (const p of world.paths) if (!p.tunnel && p.pts.length > 1) line(p.pts, p.w + 0.5, "#000");
+  for (const p of world.paths) if (p.pts.length > 1) line(p.pts, p.tunnel ? p.w + 3 : p.w + 0.5, "#000"); // tunnels: the ramp between its walls
   for (const b of world.bridges) (b.line ? line(b.line, b.w, "#000") : poly(b.pts, "#000"));
   for (const b of world.buildings) poly(b.pts, "#000");
   for (const c of world.clear || []) poly(c, "#000"); // paved forecourts from landmark models
@@ -79,7 +79,7 @@ function bladeGeometry(count) {
   return geo;
 }
 
-export function createGrass(world, scene) {
+export function createGrass(world, scene, terrain = null) {
   const { tex, half } = densityMask(world);
   const count = Math.round(PATCH * PATCH * DENSITY);
   const geo = bladeGeometry(count);
@@ -109,10 +109,18 @@ export function createGrass(world, scene) {
   const lean = t.mul(t).mul(height).mul(blade.w.mul(0.5));
   const leanDir = vec2(cos(yaw.mul(1.7)), sin(yaw.mul(1.7)));
 
+  // Ground level under each blade, from the terrain height grid (canal banks, tunnel ramps).
+  let ground = float(0);
+  if (terrain?.texture) {
+    const { x0, z0, step, nx, nz } = terrain.meta;
+    const tuv = vec2(wp.x.sub(x0).div(step).add(0.5).div(nx), wp.y.sub(z0).div(step).add(0.5).div(nz));
+    ground = texture(terrain.texture, tuv).level(0).r;
+  }
+
   const material = new THREE.MeshStandardNodeMaterial({ side: THREE.DoubleSide, roughness: 0.75 });
   material.positionNode = vec3(
     wp.x.add(across.x.mul(side).mul(width)).add(wind.x.mul(bend)).add(leanDir.x.mul(lean)),
-    t.mul(height).mul(float(1).sub(bend.mul(0.6))).add(0.02),
+    t.mul(height).mul(float(1).sub(bend.mul(0.6))).add(0.02).add(ground),
     wp.y.add(across.y.mul(side).mul(width)).add(wind.y.mul(bend)).add(leanDir.y.mul(lean)),
   );
   // Soft, mostly-up normals so the field shades like a lawn, not a pile of cards.

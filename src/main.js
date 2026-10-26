@@ -9,7 +9,8 @@ import { createTrees, TREE_RANGE } from "./trees.js";
 import { createGrass, GRASS_AMOUNT } from "./grass.js";
 import { initBuildingDetail } from "./buildings.js";
 import { loadLandmarkIndex, addLandmarks } from "./landmarks.js";
-import { hasBlenderBuildings, addBlenderBuildings } from "./blenderworld.js";
+import { hasBlenderBuildings, addBlenderBuildings, hasBlenderTerrain, addBlenderTerrain } from "./blenderworld.js";
+import { loadTerrain } from "./terrain.js";
 import { hasFurniture, addFurniture } from "./furniture.js";
 
 const status = document.getElementById("status");
@@ -25,8 +26,9 @@ const scene = new THREE.Scene();
 const camera = new THREE.PerspectiveCamera(70, innerWidth / innerHeight, 0.1, 3000);
 const { sun } = setupAtmosphere(renderer, scene);
 
-const [world, manifest, landmarkIndex, blenderBuildings, realFurniture] = await Promise.all([
-  fetch("world.json").then((r) => r.json()), loadManifest(), loadLandmarkIndex(), hasBlenderBuildings(), hasFurniture(), initBuildingDetail(),
+const [world, manifest, landmarkIndex, blenderBuildings, realFurniture, blenderTerrain, terrain] = await Promise.all([
+  fetch("world.json").then((r) => r.json()), loadManifest(), loadLandmarkIndex(), hasBlenderBuildings(), hasFurniture(),
+  hasBlenderTerrain(), loadTerrain(), initBuildingDetail(),
 ]);
 const items = (manifest.items || []).filter((i) => SHOW_SPLATS || i.type !== "splat");
 const hiddenBuildings = new Set(items.filter((i) => i.replacesBuilding).map((i) => i.anchor));
@@ -40,17 +42,21 @@ world.clear = landmarkIndex.flatMap((L) => L.clear || []);
 world.solid = landmarkIndex.flatMap((L) => L.solid || []);
 const replacedSpecies = new Set(items.filter((i) => i.species).map((i) => i.species));
 const capturedPlaces = new Set(items.filter((i) => i.type === "splat").map((i) => i.anchor));
-const info = buildWorld(world, scene, { hiddenBuildings, capturedPlaces, landmarkTops, blenderBuildings, realFurniture });
+const info = buildWorld(world, scene, { hiddenBuildings, capturedPlaces, landmarkTops, blenderBuildings, realFurniture, blenderTerrain });
+// The ground with its levels (the canal cutting, the tunnel ramps), modelled in Blender.
+if (blenderTerrain) await addBlenderTerrain(scene);
+for (const l of info.labels) l.position.y += terrain.heightAt(l.position.x, l.position.z);
 await addLandmarks(landmarkIndex, scene);
 // Buildings modelled in Blender replace the generated ones when they've been exported.
 if (blenderBuildings) await addBlenderBuildings(scene);
 // Benches, bins, lamp posts and railings modelled in Blender.
-const furniture = realFurniture ? await addFurniture(scene, info.collision) : { update() {} };
-const zooAnimals = await spawnAnimals(world, scene, { replacedSpecies, capturedPlaces });
-const trees = await createTrees(info.trees, scene, renderer);
-const grass = createGrass(world, scene);
+const furniture = realFurniture ? await addFurniture(scene, info.collision, terrain) : { update() {} };
+const zooAnimals = await spawnAnimals(world, scene, { replacedSpecies, capturedPlaces, terrain });
+const trees = await createTrees(info.trees, scene, renderer, terrain);
+const grass = createGrass(world, scene, terrain);
 
 const player = new Player(camera, renderer.domElement, info.collision);
+player.ground = terrain;
 const s = world.start;
 // world.start sits on the entrance building's north wall; begin on the forecourt facing the gates.
 player.teleport(s.x, s.z - 10, s.x, s.z + 20);

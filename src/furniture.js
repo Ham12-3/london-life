@@ -37,7 +37,7 @@ function materialFor(name) {
   return materials[name.replace(/\.\d+$/, "")] || null;
 }
 
-export async function addFurniture(scene, collision) {
+export async function addFurniture(scene, collision, terrain = { heightAt: () => 0 }) {
   const placements = await (await fetch("assets/furniture/placements.json")).json();
   const loader = new GLTFLoader().setDRACOLoader(new DRACOLoader().setDecoderPath("draco/"));
   const parts = {};
@@ -51,7 +51,7 @@ export async function addFurniture(scene, collision) {
   const up = new THREE.Vector3(0, 1, 0);
   const place = (mesh, i, [x, z, yaw, len]) => {
     sc.set(len ? len / 2.5 : 1, 1, 1);
-    mesh.setMatrixAt(i, m4.compose(pos.set(x, 0, z), q.setFromAxisAngle(up, yaw), sc));
+    mesh.setMatrixAt(i, m4.compose(pos.set(x, terrain.heightAt(x, z), z), q.setFromAxisAngle(up, yaw), sc));
   };
 
   // Everything but railings: placed once.

@@ -111,7 +111,7 @@ function randomPointIn(area, rnd) {
   return area.c;
 }
 
-export async function spawnAnimals(world, scene, { replacedSpecies = new Set(), capturedPlaces = new Set() } = {}) {
+export async function spawnAnimals(world, scene, { replacedSpecies = new Set(), capturedPlaces = new Set(), terrain = { heightAt: () => 0 } } = {}) {
   let seed = 42;
   const rnd = () => ((seed = (seed * 16807) % 2147483647) / 2147483647);
   const animals = [];
@@ -127,7 +127,7 @@ export async function spawnAnimals(world, scene, { replacedSpecies = new Set(), 
     for (let i = 0; i < count; i++) {
       const mesh = new THREE.Object3D(); // placement only; drawn by the species' InstancedMesh
       const [x, z] = randomPointIn(area, rnd);
-      mesh.position.set(x, 0, z);
+      mesh.position.set(x, terrain.heightAt(x, z), z);
       mesh.rotation.y = rnd() * Math.PI * 2;
       const an = { mesh, area, species: sp, target: randomPointIn(area, rnd), wait: rnd() * 5, speed: 0.4 + sp.len * 0.3, rnd, walking: 0 };
       herds.get(sp).animals.push(an);
@@ -168,6 +168,7 @@ export async function spawnAnimals(world, scene, { replacedSpecies = new Set(), 
         const step = Math.min(d, an.speed * dt);
         p.x += (dx / d) * step;
         p.z += (dz / d) * step;
+        p.y = terrain.heightAt(p.x, p.z);
       }
       for (const herd of herds.values()) {
         if (!herd.inst) continue;

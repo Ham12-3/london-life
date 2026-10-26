@@ -5,17 +5,21 @@ import * as THREE from "three/webgpu";
 import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
 import { DRACOLoader } from "three/addons/loaders/DRACOLoader.js";
 import { pbr } from "./materials.js";
+import { waterMaterial } from "./water.js";
+import { GROUND_STYLE, PATH_STYLE } from "./world.js";
 
 export const BLENDER_BUILDINGS = "assets/blender/buildings.glb";
+export const BLENDER_TERRAIN = "assets/blender/terrain.glb";
 
-export async function hasBlenderBuildings() {
+const exists = async (url) => {
   try {
-    const res = await fetch(BLENDER_BUILDINGS, { method: "HEAD" });
-    return res.ok;
+    return (await fetch(url, { method: "HEAD" })).ok;
   } catch {
     return false;
   }
-}
+};
+export const hasBlenderBuildings = () => exists(BLENDER_BUILDINGS);
+export const hasBlenderTerrain = () => exists(BLENDER_TERRAIN);
 
 const std = (o) => new THREE.MeshStandardMaterial(o);
 const FIXED = {
@@ -37,6 +41,21 @@ const FIXED = {
   door_green: () => std({ color: 0x1f3a2b, roughness: 0.35 }),
   door_oxblood: () => std({ color: 0x5a1d1d, roughness: 0.35 }),
   door_slate: () => std({ color: 0x3d5566, roughness: 0.35 }),
+  // The ground, paths and water of the Blender terrain, as world.js draws them.
+  lawn: () => pbr(GROUND_STYLE.grass.tex, GROUND_STYLE.grass),
+  zoo_ground: () => pbr("sparse_grass", { tile: 3, colorize: [0.085, 0.12, 0.04] }),
+  woodland: () => pbr(GROUND_STYLE.wood.tex, GROUND_STYLE.wood),
+  dirt: () => pbr(GROUND_STYLE.enclosure.tex, GROUND_STYLE.enclosure),
+  sand: () => pbr(GROUND_STYLE.sand.tex, GROUND_STYLE.sand),
+  rock: () => pbr(GROUND_STYLE.rock.tex, GROUND_STYLE.rock),
+  paving: () => pbr(PATH_STYLE.footway.tex, PATH_STYLE.footway),
+  gravel: () => pbr(PATH_STYLE.path.tex, PATH_STYLE.path),
+  asphalt: () => pbr(PATH_STYLE.road.tex, PATH_STYLE.road),
+  steps: () => pbr(PATH_STYLE.steps.tex, PATH_STYLE.steps),
+  cycleway: () => pbr(PATH_STYLE.cycleway.tex, PATH_STYLE.cycleway),
+  concrete: () => pbr(PATH_STYLE.corridor.tex, PATH_STYLE.corridor),
+  boards: () => pbr("wood_planks", { tile: 2, tint: 0xd8d0c4 }),
+  water: () => waterMaterial(),
 };
 
 const cache = new Map();
@@ -49,6 +68,26 @@ function materialFor(name) {
   else m = FIXED[base] ? FIXED[base]() : null;
   cache.set(base, m);
   return m;
+}
+
+export async function addBlenderTerrain(scene) {
+  const draco = new DRACOLoader().setDecoderPath("draco/");
+  const gltf = await new GLTFLoader().setDRACOLoader(draco).loadAsync(BLENDER_TERRAIN);
+  gltf.scene.traverse((o) => {
+    if (!o.isMesh) return;
+    const swap = (m) => materialFor(m.name) || m;
+    o.material = Array.isArray(o.material) ? o.material.map(swap) : swap(o.material);
+    o.receiveShadow = true;
+    o.castShadow = o.name.startsWith("Earthworks");
+    if (o.name.startsWith("Earthworks")) {
+      // Walls are single faces: show both sides (the canal walls are seen from across the water).
+      const two = (m) => { const c = m.clone(); c.side = THREE.DoubleSide; return c; };
+      o.material = Array.isArray(o.material) ? o.material.map(two) : two(o.material);
+    }
+  });
+  scene.add(gltf.scene);
+  draco.dispose();
+  return gltf.scene;
 }
 
 export async function addBlenderBuildings(scene) {
