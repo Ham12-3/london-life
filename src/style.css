@@ -14,6 +14,7 @@ button:hover { background: rgba(255, 255, 255, 0.16); }
 .chip:empty { display: none; }
 .chip-mode { top: 56px; color: var(--accent); }
 .chip-status { top: auto; bottom: 16px; font-weight: 400; }
+.chip-quality { left: auto; right: 16px; top: 60px; font-weight: 400; font-size: 13px; padding: 6px 12px; }
 #minimap { position: fixed; right: 16px; bottom: 16px; width: 200px; height: 200px; border-radius: 50%; border: 3px solid var(--panel); box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3); }
 .buttons { position: fixed; right: 16px; top: 16px; display: flex; gap: 8px; }
 .buttons button { background: var(--panel); }

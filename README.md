@@ -1,6 +1,6 @@
 # london-life
 
-A first-person, walkable simulation of **ZSL London Zoo**, running in the browser (Three.js).
+A first-person, walkable simulation of **ZSL London Zoo**, running in the browser (Three.js, WebGPU).
 
 The world comes from OpenStreetMap, so it follows the real zoo. Every mapped path, building, enclosure, fence, wall, hedge, pond, the Regent's Canal, the Outer Circle, and all ~350 mapped trees are in it. Every zoo building has doorways, so you can walk in and out. Placeholder animals wander inside their real enclosure outlines.
 
@@ -16,7 +16,8 @@ npm install
 npm run dev
 ```
 
-Open http://localhost:5173 and click to start.
+Open http://localhost:5173 in Chrome or Edge (WebGPU) and click to start. The PBR textures are in
+`public/assets/textures`; if they're missing, run `python tools/fetch_textures.py`.
 
 | Key | Action |
 | --- | --- |
@@ -26,7 +27,11 @@ Open http://localhost:5173 and click to start.
 | T | Search places and jump there |
 | M | Full map (click to teleport) |
 | N | Fly mode (Q/E down/up) |
+| P | Graphics quality: Auto, High, Medium, Low |
 | Esc | Pause |
+
+Auto quality starts on Medium, steps down below ~40 fps and tries a step up while holding 60.
+Add `?gpu` to the URL to turn on GPU timers (`zoo.renderer.info.render.timestamp`) for profiling.
 
 ## How it's built
 
@@ -34,11 +39,17 @@ Open http://localhost:5173 and click to start.
 | --- | --- |
 | `data/osm-zoo.json` | Raw OpenStreetMap extract (ODbL, © OpenStreetMap contributors) |
 | `tools/build_world.py` | OSM → `public/world.json` in local metres, plus doorways and fence gaps where paths cross. Also writes `tools/shotlist.json` |
-| `src/world.js` | Ground, paths, buildings (walls with doorways, floors, ceilings, roofs), fences, water, trees, furniture, labels, collision |
+| `src/render.js` | WebGPU renderer: physical sky with clouds, sky lighting, cascaded sun shadows, haze, GTAO, TAAU upscaling, quality levels |
+| `src/world.js` | Ground, paths, buildings (walls with doorways, floors, ceilings, roofs), fences, water, furniture, labels, collision |
+| `src/materials.js` | Poly Haven PBR surfaces, mapped in world-space metres (brick, render, paving, asphalt, lawn, dirt…) |
+| `src/trees.js` | Ez-Tree oaks, ashes and aspens with wind sway near you; baked impostor cards further out |
+| `src/grass.js` | Wind-blown grass blades around you, grown from a density mask of the map's lawns |
+| `src/water.js` | Ponds and canal: drifting ripples with sky reflections |
+| `tools/fetch_textures.py` | Downloads the CC0 Poly Haven textures (1k) and the three.js water normal map |
 | `src/animals.js` | Placeholder animals per enclosure |
 | `src/player.js` | First-person controller and collision |
 | `src/hud.js` | Location readout, minimap, full map, places search |
-| `src/assets.js` | Loads splats/GLBs listed in `public/assets/manifest.json` |
+| `src/assets.js` | Loads GLBs listed in `public/assets/manifest.json` (the splats there are retired: their viewer needs WebGL) |
 
 Rebuild the world after changing the converter: `npm run world`.
 

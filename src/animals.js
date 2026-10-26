@@ -1,6 +1,7 @@
 // Placeholder animals that wander inside their real enclosure outlines.
 // Each species is swapped for an image-to-3D model once one is listed in public/assets/manifest.json.
 import * as THREE from "three";
+import { mergeGeometries } from "three/addons/utils/BufferGeometryUtils.js";
 import { pointInPoly } from "./world.js";
 
 // Keyword in the OSM area name -> species look. len/height in metres.
@@ -79,7 +80,24 @@ function makeAnimal(sp) {
     add(legGeo, 0, legH / 2, 0.08);
     add(legGeo, 0, legH / 2, -0.08);
   }
-  return g;
+  return flatten(g);
+}
+
+// One mesh per animal (parts baked in, colours per vertex): a hundred animals stay a hundred draw calls
+// per pass instead of six hundred.
+const animalMaterial = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.9 });
+function flatten(group) {
+  const parts = group.children.map((m) => {
+    m.updateMatrix();
+    const geo = m.geometry.clone().applyMatrix4(m.matrix);
+    const n = geo.attributes.position.count, c = m.material.color, rgb = new Float32Array(n * 3);
+    for (let i = 0; i < n; i++) rgb.set([c.r, c.g, c.b], i * 3);
+    geo.setAttribute("color", new THREE.BufferAttribute(rgb, 3));
+    return geo;
+  });
+  const mesh = new THREE.Mesh(mergeGeometries(parts), animalMaterial);
+  mesh.castShadow = true;
+  return mesh;
 }
 
 function randomPointIn(area, rnd) {

@@ -11,6 +11,7 @@
     "world": "python -I tools/build_world.py"
   },
   "dependencies": {
+    "@dgreenheck/ez-tree": "^1.1.0",
     "@sparkjsdev/spark": "^2.4.0",
     "three": "^0.186.1"
   },

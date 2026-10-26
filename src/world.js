@@ -2,31 +2,42 @@
 // and the collision data the player walks against.
 import * as THREE from "three";
 import { mergeGeometries } from "three/addons/utils/BufferGeometryUtils.js";
+import { pbr } from "./materials.js";
+import { waterMaterial } from "./water.js";
 
-const GROUND_STYLE = {
-  park: { color: 0x6f9a4b, y: 0.01 },
-  grass: { color: 0x79a552, y: 0.02 },
-  garden: { color: 0x6c9e4a, y: 0.025 },
-  wood: { color: 0x4f7a37, y: 0.02 },
-  scrub: { color: 0x5d7f3c, y: 0.03 },
-  pitch: { color: 0x82ad55, y: 0.03 },
-  playground: { color: 0xc9a77a, y: 0.03 },
-  enclosure: { color: 0x9a8a5f, y: 0.035 },
-  sand: { color: 0xdcc58e, y: 0.04 },
-  rock: { color: 0x8d8a83, y: 0.045 },
-  paved: { color: 0xa9a49a, y: 0.03 },
+// Surfaces: Poly Haven texture set, metres per repeat, tint. `grass` (0..1) is how densely the
+// wind-blown grass grows there (see grass.js).
+export const GROUND_STYLE = {
+  park: { tex: "sparse_grass", tile: 3, colorize: [0.075, 0.13, 0.03], y: 0.01, grass: 1 },
+  grass: { tex: "sparse_grass", tile: 3, colorize: [0.075, 0.13, 0.03], y: 0.02, grass: 1 },
+  garden: { tex: "sparse_grass", tile: 3, colorize: [0.07, 0.12, 0.03], y: 0.025, grass: 0.8 },
+  wood: { tex: "forest_floor", tile: 3, tint: 0xffffff, y: 0.02, grass: 0.25 },
+  scrub: { tex: "forest_floor", tile: 3, tint: 0xd8e0c0, y: 0.03, grass: 0.5 },
+  pitch: { tex: "sparse_grass", tile: 3, colorize: [0.08, 0.14, 0.035], y: 0.03, grass: 0.9 },
+  playground: { tex: "park_dirt", tile: 3, tint: 0xffffff, y: 0.03, grass: 0 },
+  enclosure: { tex: "park_dirt", tile: 3, tint: 0xffffff, y: 0.035, grass: 0.35 },
+  sand: { tex: "coast_sand_01", tile: 3, tint: 0xffffff, y: 0.04, grass: 0 },
+  rock: { tex: "aerial_rocks_02", tile: 4, tint: 0xffffff, y: 0.045, grass: 0 },
+  paved: { tex: "concrete_pavement", tile: 3, tint: 0xffffff, y: 0.03, grass: 0 },
 };
-const PATH_STYLE = {
-  road: { color: 0x4a4a4e, y: 0.06 },
-  footway: { color: 0xc2b9a7, y: 0.07 },
-  path: { color: 0xb7a582, y: 0.07 },
-  pedestrian: { color: 0xc8c0ae, y: 0.07 },
-  steps: { color: 0xb0aca4, y: 0.075 },
-  corridor: { color: 0xd8d2c4, y: 0.1 },
-  cycleway: { color: 0xb05a4a, y: 0.065 },
+export const PATH_STYLE = {
+  road: { tex: "asphalt_02", tile: 4, tint: 0xb0b0b0, y: 0.06 },
+  footway: { tex: "concrete_pavement", tile: 3, tint: 0xf0ece4, y: 0.07 },
+  path: { tex: "gravel_ground_01", tile: 2.5, tint: 0xffffff, y: 0.07 },
+  pedestrian: { tex: "concrete_pavement", tile: 3, tint: 0xffffff, y: 0.07 },
+  steps: { tex: "precast_stone_paving", tile: 2, tint: 0xffffff, y: 0.075 },
+  corridor: { tex: "concrete_floor_02", tile: 3, tint: 0xffffff, y: 0.1 },
+  cycleway: { tex: "asphalt_02", tile: 4, tint: 0xd08070, y: 0.065 },
 };
 const WALL_PALETTE = [0x9c5b43, 0xb36b4f, 0xd8cdb8, 0xe8e2d4, 0x8a7f72, 0xc9b28c, 0x7d6a5a];
 const ZOO_PALETTE = [0xe9e4d6, 0xd9c7a3, 0xb7c4b0, 0xcfd6d8, 0xa98c6a];
+// Wall finish by paint colour: red brick, buff London stock brick, or painted render tinted that colour.
+const WALL_FINISH = { 0x9c5b43: "brick_red", 0xb36b4f: "brick_red", 0x7d6a5a: "brick_buff", 0x8a7f72: "brick_buff" };
+const WALL_MATERIALS = {
+  brick_red: () => pbr("brick_wall_02", { tile: 2 }),
+  brick_buff: () => pbr("brick_wall_003", { tile: 2 }),
+  render: () => pbr("white_stucco", { tile: 3, vertexTint: true, normalScale: 0.6 }),
+};
 const DOOR_WIDTH = 2.4;
 const DOOR_HEIGHT = 2.7;
 const WALL_THICKNESS = 0.3;
@@ -237,29 +248,6 @@ function railingTexture() {
   return t;
 }
 
-function pavingTexture() {
-  const c = document.createElement("canvas");
-  c.width = c.height = 128;
-  const g = c.getContext("2d");
-  g.fillStyle = "#ffffff";
-  g.fillRect(0, 0, 128, 128);
-  for (let i = 0; i < 900; i++) {
-    const v = 200 + Math.floor(Math.random() * 55);
-    g.fillStyle = `rgb(${v},${v},${v})`;
-    g.fillRect(Math.random() * 128, Math.random() * 128, 2, 2);
-  }
-  g.strokeStyle = "rgba(0,0,0,0.12)";
-  for (let i = 0; i <= 128; i += 32) {
-    g.beginPath(); g.moveTo(0, i); g.lineTo(128, i); g.stroke();
-    g.beginPath(); g.moveTo(i, 0); g.lineTo(i, 128); g.stroke();
-  }
-  const t = new THREE.CanvasTexture(c);
-  t.wrapS = t.wrapT = THREE.RepeatWrapping;
-  t.repeat.set(1 / 2.5, 1 / 2.5);
-  t.colorSpace = THREE.SRGBColorSpace;
-  return t;
-}
-
 export function makeLabel(text, { size = 28, color = "#fff", bg = "rgba(20,30,25,0.72)" } = {}) {
   const c = document.createElement("canvas");
   const g = c.getContext("2d");
@@ -298,7 +286,7 @@ export function buildWorld(world, scene, { hiddenBuildings = new Set(), captured
   const centreOf = (pts) => [pts.reduce((s, p) => s + p[0], 0) / pts.length, pts.reduce((s, p) => s + p[1], 0) / pts.length];
 
   // Base ground: Regent's Park lawns stretching to the fog.
-  const base = new THREE.Mesh(new THREE.PlaneGeometry(4000, 4000), new THREE.MeshStandardMaterial({ color: 0x6a9446, roughness: 1 }));
+  const base = new THREE.Mesh(new THREE.PlaneGeometry(4000, 4000), pbr("sparse_grass", { tile: 3, colorize: [0.075, 0.13, 0.03] }));
   base.rotation.x = -Math.PI / 2;
   base.receiveShadow = true;
   scene.add(base);
@@ -306,7 +294,7 @@ export function buildWorld(world, scene, { hiddenBuildings = new Set(), captured
   // Zoo grounds are mostly paved/gravel between attractions.
   const zooGround = world.zoo.map((r) => flatShape(r, 0.005));
   if (zooGround.length) {
-    const m = new THREE.Mesh(mergeGeometries(zooGround), new THREE.MeshStandardMaterial({ color: 0x8f9a6c, roughness: 1 }));
+    const m = new THREE.Mesh(mergeGeometries(zooGround), pbr("sparse_grass", { tile: 3, colorize: [0.085, 0.12, 0.04] }));
     m.receiveShadow = true;
     scene.add(m);
   }
@@ -321,7 +309,7 @@ export function buildWorld(world, scene, { hiddenBuildings = new Set(), captured
     } catch { /* degenerate polygon */ }
   }
   for (const [kind, geos] of Object.entries(byKind)) {
-    const m = new THREE.Mesh(mergeGeometries(geos), new THREE.MeshStandardMaterial({ color: GROUND_STYLE[kind].color, roughness: 1 }));
+    const m = new THREE.Mesh(mergeGeometries(geos), pbr(GROUND_STYLE[kind].tex, GROUND_STYLE[kind]));
     m.receiveShadow = true;
     scene.add(m);
   }
@@ -339,7 +327,8 @@ export function buildWorld(world, scene, { hiddenBuildings = new Set(), captured
   }
   if (waterGeos.length) {
     const water = new THREE.Mesh(mergeGeometries(waterGeos.map((g) => { g.deleteAttribute("uv"); return g; })),
-      new THREE.MeshStandardMaterial({ color: 0x3d6b73, roughness: 0.15, metalness: 0.3 }));
+      waterMaterial());
+    water.receiveShadow = true;
     scene.add(water);
   }
 
@@ -351,12 +340,13 @@ export function buildWorld(world, scene, { hiddenBuildings = new Set(), captured
     col.bridges.push(b);
   }
   if (bridgeGeos.length) {
-    scene.add(new THREE.Mesh(mergeGeometries(bridgeGeos.map((g) => { g.deleteAttribute("uv"); return g; })),
-      new THREE.MeshStandardMaterial({ color: 0x9b9184, roughness: 0.9 })));
+    const bridges = new THREE.Mesh(mergeGeometries(bridgeGeos.map((g) => { g.deleteAttribute("uv"); return g; })),
+      pbr("wood_planks", { tile: 2, tint: 0xd8d0c4 }));
+    bridges.receiveShadow = true;
+    scene.add(bridges);
   }
 
   // Paths and roads.
-  const paving = pavingTexture();
   const pathGeos = {};
   for (const p of world.paths) {
     if (p.pts.length < 2) continue;
@@ -364,8 +354,7 @@ export function buildWorld(world, scene, { hiddenBuildings = new Set(), captured
     (pathGeos[kind] ||= []).push(ribbon(p.pts, p.w, p.bridge ? 0.14 : PATH_STYLE[kind].y));
   }
   for (const [kind, geos] of Object.entries(pathGeos)) {
-    const mat = new THREE.MeshStandardMaterial({ color: PATH_STYLE[kind].color, roughness: 0.95, map: kind === "road" ? null : paving });
-    const m = new THREE.Mesh(mergeGeometries(geos), mat);
+    const m = new THREE.Mesh(mergeGeometries(geos), pbr(PATH_STYLE[kind].tex, PATH_STYLE[kind]));
     m.receiveShadow = true;
     scene.add(m);
   }
@@ -387,7 +376,7 @@ export function buildWorld(world, scene, { hiddenBuildings = new Set(), captured
   };
 
   // Buildings: walls with doorways (so every zoo building can be entered), interior floor, roof.
-  const wallGeos = [], roofGeos = [], floorGeos = [], ceilingGeos = [];
+  const wallGeos = { brick_red: [], brick_buff: [], render: [] }, roofGeos = [], floorGeos = [], ceilingGeos = [];
   const buildingInfo = [];
   for (const [bi, b] of world.buildings.entries()) {
     const ring = b.pts;
@@ -408,6 +397,7 @@ export function buildWorld(world, scene, { hiddenBuildings = new Set(), captured
     }
     const palette = b.inZoo ? ZOO_PALETTE : WALL_PALETTE;
     const color = palette[hash(id) % palette.length];
+    const finish = wallGeos[b.inZoo ? "render" : WALL_FINISH[color] || "render"];
     // Buildings inside a captured enclosure are part of its splat; keep their walls for collision only.
     const hidden = hiddenBuildings.has(b.name) || inCaptured(...centreOf(ring.slice(0, -1)));
     for (let i = 0; i < ring.length - 1; i++) {
@@ -416,10 +406,10 @@ export function buildWorld(world, scene, { hiddenBuildings = new Set(), captured
       const { solid, gaps } = solidIntervals(a, c, b.inZoo ? doors : [], DOOR_WIDTH);
       for (const [p, q] of solid) {
         col.addSegment(p[0], p[1], q[0], q[1]);
-        if (!hidden) wallGeos.push(paint(wallBox(p[0], p[1], q[0], q[1], 0, b.h, WALL_THICKNESS), color));
+        if (!hidden) finish.push(paint(wallBox(p[0], p[1], q[0], q[1], 0, b.h, WALL_THICKNESS), color));
       }
       if (!hidden && b.h > DOOR_HEIGHT + 0.2)
-        for (const [p, q] of gaps) wallGeos.push(paint(wallBox(p[0], p[1], q[0], q[1], DOOR_HEIGHT, b.h, WALL_THICKNESS), color));
+        for (const [p, q] of gaps) finish.push(paint(wallBox(p[0], p[1], q[0], q[1], DOOR_HEIGHT, b.h, WALL_THICKNESS), color));
     }
     if (!hidden) {
       try {
@@ -439,11 +429,13 @@ export function buildWorld(world, scene, { hiddenBuildings = new Set(), captured
       scene.add(label);
     }
   }
-  const wallMat = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.85 });
-  const walls = new THREE.Mesh(mergeGeometries(wallGeos), wallMat);
-  walls.castShadow = walls.receiveShadow = true;
-  scene.add(walls);
-  const roofs = new THREE.Mesh(mergeGeometries(roofGeos), new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.9, side: THREE.DoubleSide }));
+  for (const [finish, geos] of Object.entries(wallGeos)) {
+    if (!geos.length) continue;
+    const walls = new THREE.Mesh(mergeGeometries(geos), WALL_MATERIALS[finish]());
+    walls.castShadow = walls.receiveShadow = true;
+    scene.add(walls);
+  }
+  const roofs = new THREE.Mesh(mergeGeometries(roofGeos), pbr("concrete_floor_02", { tile: 3, vertexTint: true, side: THREE.DoubleSide }));
   roofs.castShadow = roofs.receiveShadow = true;
   scene.add(roofs);
   if (ceilingGeos.length) {
@@ -453,14 +445,14 @@ export function buildWorld(world, scene, { hiddenBuildings = new Set(), captured
     scene.add(ceilings);
   }
   if (floorGeos.length) {
-    const floor = new THREE.Mesh(mergeGeometries(floorGeos), new THREE.MeshStandardMaterial({ color: 0xcfc6b4, roughness: 0.6, map: paving }));
+    const floor = new THREE.Mesh(mergeGeometries(floorGeos), pbr("concrete_floor_02", { tile: 2, tint: 0xe8e0d0, roughness: 0.7 }));
     floor.receiveShadow = true;
     scene.add(floor);
   }
 
   // Fences, walls and hedges, with gaps wherever a path crosses them.
   const railing = railingTexture();
-  const fenceGeos = [], solidBarrierGeos = [];
+  const fenceGeos = [], solidBarrierGeos = [], masonryGeos = [];
   for (const br of world.barriers) {
     for (let i = 0; i < br.pts.length - 1; i++) {
       const { solid } = solidIntervals(br.pts[i], br.pts[i + 1], br.gaps, 2.2);
@@ -475,8 +467,8 @@ export function buildWorld(world, scene, { hiddenBuildings = new Set(), captured
           g.translate((p[0] + q[0]) / 2, br.h / 2, (p[1] + q[1]) / 2);
           fenceGeos.push(g);
         } else {
-          const color = br.kind === "hedge" ? 0x3f6b2f : 0x8b7d6b;
-          solidBarrierGeos.push(paint(wallBox(p[0], p[1], q[0], q[1], 0, br.h, br.kind === "hedge" ? 0.9 : 0.35), color));
+          if (br.kind === "hedge") solidBarrierGeos.push(paint(wallBox(p[0], p[1], q[0], q[1], 0, br.h, 0.9), 0x3f6b2f));
+          else masonryGeos.push(wallBox(p[0], p[1], q[0], q[1], 0, br.h, 0.35));
         }
       }
     }
@@ -492,29 +484,16 @@ export function buildWorld(world, scene, { hiddenBuildings = new Set(), captured
     m.castShadow = m.receiveShadow = true;
     scene.add(m);
   }
+  if (masonryGeos.length) {
+    const m = new THREE.Mesh(mergeGeometries(masonryGeos), pbr("brick_wall_003", { tile: 2 }));
+    m.castShadow = m.receiveShadow = true;
+    scene.add(m);
+  }
 
-  // Trees (instanced): every mapped tree, tree rows, and woodland fill.
+  // Trees: trunks are solid; the trees themselves are drawn by trees.js.
   const trees = world.trees.filter(([x, z]) => !inCaptured(x, z));
-  const trunkGeo = new THREE.CylinderGeometry(0.22, 0.32, 1, 7);
-  trunkGeo.translate(0, 0.5, 0);
-  const crownGeo = new THREE.IcosahedronGeometry(1, 1);
-  const trunks = new THREE.InstancedMesh(trunkGeo, new THREE.MeshStandardMaterial({ color: 0x5b4636, roughness: 1 }), trees.length);
-  const crowns = new THREE.InstancedMesh(crownGeo, new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.95, flatShading: true }), trees.length);
-  const m4 = new THREE.Matrix4(), q = new THREE.Quaternion(), s = new THREE.Vector3(), p = new THREE.Vector3(), tint = new THREE.Color();
-  trees.forEach(([x, z, h], i) => {
-    const r = (hash(`${x},${z}`) % 1000) / 1000;
-    const trunkH = h * 0.42;
-    m4.compose(p.set(x, 0, z), q.identity(), s.set(1 + h / 20, trunkH, 1 + h / 20));
-    trunks.setMatrixAt(i, m4);
-    const cr = h * (0.3 + r * 0.1);
-    m4.compose(p.set(x, trunkH + cr * 0.75, z), q.setFromAxisAngle(new THREE.Vector3(0, 1, 0), r * 6.28), s.set(cr, cr * 0.85, cr));
-    crowns.setMatrixAt(i, m4);
-    crowns.setColorAt(i, tint.setHSL(0.26 + r * 0.06, 0.45, 0.24 + r * 0.1));
-    col.addCircle(x, z, 0.4);
-  });
-  trunks.castShadow = crowns.castShadow = true;
-  crowns.receiveShadow = true;
-  scene.add(trunks, crowns);
+  for (const [x, z] of trees) col.addCircle(x, z, 0.4);
+  const m4 = new THREE.Matrix4(), q = new THREE.Quaternion(), s = new THREE.Vector3(), p = new THREE.Vector3();
 
   // Street furniture.
   const furnitureKinds = {
@@ -560,5 +539,5 @@ export function buildWorld(world, scene, { hiddenBuildings = new Set(), captured
     return { building: inside?.name || null, area: area?.name || null, inZoo };
   };
 
-  return { collision: col, labels, buildings: buildingInfo, nearestPathPoint, whereAmI };
+  return { collision: col, labels, buildings: buildingInfo, nearestPathPoint, whereAmI, trees };
 }
