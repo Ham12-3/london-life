@@ -1,0 +1,91 @@
+[
+ {
+  "id": "penguin-pool",
+  "name": "Lubetkin Pool",
+  "url": "assets/landmarks/penguin-pool.glb",
+  "origin": [
+   121.28512820512817,
+   141.32897435897434
+  ],
+  "replaces": [
+   "Lubetkin Pool"
+  ],
+  "top": 2.0
+ },
+ {
+  "id": "snowdon-aviary",
+  "name": "Monkey Valley",
+  "url": "assets/landmarks/snowdon-aviary.glb",
+  "origin": [
+   -156.1407692307692,
+   -131.84615384615387
+  ],
+  "replaces": [],
+  "top": 21.5
+ },
+ {
+  "id": "casson-pavilion",
+  "name": "Casson Pavilion",
+  "url": "assets/landmarks/casson-pavilion.glb",
+  "origin": [
+   42.94652173913041,
+   80.71123188405798
+  ],
+  "replaces": [
+   "Casson Pavilion"
+  ],
+  "top": 13.5
+ },
+ {
+  "id": "clock-tower",
+  "name": "Clock Tower",
+  "url": "assets/landmarks/clock-tower.glb",
+  "origin": [
+   66.108,
+   -24.104
+  ],
+  "replaces": [
+   "Clock Tower"
+  ],
+  "top": 12.7
+ },
+ {
+  "id": "giraffe-house",
+  "name": "The Giraffe House",
+  "url": "assets/landmarks/giraffe-house.glb",
+  "origin": [
+   -188.70642857142857,
+   -56.505714285714284
+  ],
+  "replaces": [
+   "The Giraffe House"
+  ],
+  "top": 13.12
+ },
+ {
+  "id": "raven-cage",
+  "name": "Raven Cage",
+  "url": "assets/landmarks/raven-cage.glb",
+  "origin": [
+   70.93526315789475,
+   -44.88473684210527
+  ],
+  "replaces": [
+   "Raven Cage"
+  ],
+  "top": 8.2
+ },
+ {
+  "id": "blackburn-pavilion",
+  "name": "Blackburn Pavilion",
+  "url": "assets/landmarks/blackburn-pavilion.glb",
+  "origin": [
+   223.33473684210526,
+   180.53315789473686
+  ],
+  "replaces": [
+   "Blackburn Pavilion"
+  ],
+  "top": 14.09
+ }
+]

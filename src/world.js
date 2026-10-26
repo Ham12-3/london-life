@@ -273,7 +273,7 @@ export function makeLabel(text, { size = 28, color = "#fff", bg = "rgba(20,30,25
 
 // ---------- world ----------
 
-export function buildWorld(world, scene, { hiddenBuildings = new Set(), capturedPlaces = new Set() } = {}) {
+export function buildWorld(world, scene, { hiddenBuildings = new Set(), capturedPlaces = new Set(), landmarkTops = new Map() } = {}) {
   const col = new Collision();
   const labels = [];
 
@@ -383,8 +383,10 @@ export function buildWorld(world, scene, { hiddenBuildings = new Set(), captured
   for (const [bi, b] of world.buildings.entries()) {
     const ring = b.pts;
     const id = b.name || `b${bi}`;
-    const doors = [...b.doors];
-    if (b.inZoo && doors.length === 0) {
+    // A landmark model replaces this building: its walls stay solid (the model has no doorways cut).
+    const landmark = landmarkTops.has(b.name);
+    const doors = landmark ? [] : [...b.doors];
+    if (b.inZoo && !landmark && doors.length === 0) {
       // No mapped entrance: open the edge facing the nearest path.
       let best = null, bd = Infinity;
       for (let i = 0; i < ring.length - 1; i++) {
@@ -416,7 +418,7 @@ export function buildWorld(world, scene, { hiddenBuildings = new Set(), captured
         for (const [p, q] of gaps) finish.push(paint(wallBox(p[0], p[1], q[0], q[1], DOOR_HEIGHT, b.h, WALL_THICKNESS), color));
     }
     // Plinth, cornice or parapet, windows, door surrounds and (often) a pitched roof: see buildings.js.
-    const style = hidden ? { roof: "flat", top: b.h } : detail.add(b, id, edges, finish, color);
+    const style = hidden ? { roof: "flat", top: landmarkTops.get(b.name) ?? b.h } : detail.add(b, id, edges, finish, color);
     if (!hidden) {
       try {
         if (style.roof === "flat") roofGeos.push(paint(flatShape(ring, b.h), b.kind === "cage" ? 0x3a3f3a : 0x5c5852));

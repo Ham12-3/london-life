@@ -47,12 +47,35 @@ Add `?gpu` to the URL to turn on GPU timers (`zoo.renderer.info.render.timestamp
 | `src/grass.js` | Wind-blown grass blades around you, grown from a density mask of the map's lawns |
 | `src/water.js` | Ponds and canal: drifting ripples with sky reflections |
 | `tools/fetch_textures.py` | Downloads the CC0 Poly Haven textures (1k) and the three.js water normal map |
-| `src/animals.js` | Placeholder animals per enclosure |
+| `src/animals.js` | Animals per enclosure: Blender models, one instanced draw per species, legs swung on the GPU as they walk |
+| `src/landmarks.js` | Loads the Blender landmark models and gives their surfaces the zoo's PBR materials |
 | `src/player.js` | First-person controller and collision |
 | `src/hud.js` | Location readout, minimap, full map, places search |
 | `src/assets.js` | Loads GLBs listed in `public/assets/manifest.json` (the splats there are retired: their viewer needs WebGL) |
 
 Rebuild the world after changing the converter: `npm run world`.
+
+## Landmarks and animals (Blender)
+
+The zoo's famous buildings and all its animals are modelled in Blender by script, so they can be
+rebuilt or tweaked at any time. Your installed Blender is used headless (the Microsoft Store build
+runs through its `blender-launcher` alias).
+
+| Path | What |
+| --- | --- |
+| `tools/landmarks/prepare.mjs` | Real footprints of each landmark from `world.json`, plus straight-skeleton hipped roofs |
+| `tools/landmarks/build.py` | Models the Lubetkin Penguin Pool, Snowdon Aviary, Casson Pavilion, Clock Tower, Giraffe House, Raven Cage and Blackburn Pavilion on those footprints; writes `public/assets/landmarks/*.glb` and `landmarks.json` |
+| `tools/animals/build.py` | 23 species built with Blender's Skin modifier, coats painted into vertex colours; writes `public/assets/animals/*.glb` and `animals.json` (leg joints for the walk cycle) |
+| `tools/animals/preview.py` | Renders all animals side by side to `work/animals_preview.png` |
+
+```bash
+node tools/landmarks/prepare.mjs
+blender --background --factory-startup --python tools/landmarks/build.py
+blender --background --factory-startup --python tools/animals/build.py
+```
+
+Add species names after `--` to rebuild only those (e.g. `-- clock-tower`). A landmark replaces the
+generated building on its footprint (its walls stay solid for collision).
 
 ## Asset pipeline
 
