@@ -1,6 +1,8 @@
 import { defineConfig } from "vite";
 
 export default defineConfig({
+  // Relative URLs, so the build works from any folder (GitHub Pages serves it under /london-life/).
+  base: "./",
   server: {
     // Training tools and their scratch output are huge and change constantly; don't watch them.
     watch: { ignored: ["**/.tools/**", "**/work/**", "**/data/**", "**/assets/videos/**"] },
