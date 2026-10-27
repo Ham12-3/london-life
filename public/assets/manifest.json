@@ -1,0 +1,1806 @@
+{
+  "items": [
+    {
+      "id": "outback",
+      "type": "splat",
+      "url": "assets/splats/outback-fit.ply",
+      "anchor": "Outback",
+      "replacesBuilding": false,
+      "matrix": [
+        2.495914,
+        -0.000713,
+        -3.122552,
+        0,
+        0.001111,
+        -3.997489,
+        0.001801,
+        0,
+        -3.122552,
+        -0.001992,
+        -2.495914,
+        0,
+        -58.134408,
+        1.607793,
+        61.37098,
+        1
+      ],
+      "centre": [
+        -103.62,
+        44.71
+      ],
+      "fit": {
+        "sceneToFootprint": 1.6,
+        "yawDeg": -70.3,
+        "metresPerUnit": 3.9975
+      }
+    },
+    {
+      "id": "gorilla-kingdom",
+      "type": "splat",
+      "url": "assets/splats/gorilla-kingdom-fit.ply",
+      "anchor": "Gorilla Kingdom",
+      "replacesBuilding": false,
+      "matrix": [
+        -0.914962,
+        0.000543,
+        -0.459494,
+        0,
+        -0.000123,
+        -1.02386,
+        -0.000966,
+        0,
+        -0.459494,
+        -0.000808,
+        0.914961,
+        0,
+        28.661531,
+        8.253304,
+        -35.734093,
+        1
+      ],
+      "centre": [
+        11.68,
+        -4.88
+      ],
+      "fit": {
+        "sceneToFootprint": 0.6,
+        "yawDeg": -151.2,
+        "metresPerUnit": 1.0239
+      }
+    },
+    {
+      "id": "butterfly-paradise",
+      "type": "splat",
+      "url": "assets/splats/butterfly-paradise-fit.ply",
+      "anchor": "Butterfly Paradise",
+      "replacesBuilding": false,
+      "matrix": [
+        7.159216,
+        -1.419084,
+        8.182167,
+        0,
+        -1.119957,
+        -10.86933,
+        -0.905198,
+        0,
+        8.228448,
+        -0.244719,
+        -7.242153,
+        0,
+        -134.935334,
+        62.771525,
+        300.834827,
+        1
+      ],
+      "centre": [
+        193.85,
+        14.32
+      ],
+      "fit": {
+        "sceneToFootprint": 0.6,
+        "yawDeg": 48.9,
+        "metresPerUnit": 10.9643
+      }
+    },
+    {
+      "id": "land-of-the-lions",
+      "type": "splat",
+      "url": "assets/splats/land-of-the-lions-fit.ply",
+      "anchor": "Land of the Lions",
+      "replacesBuilding": false,
+      "matrix": [
+        -0.496166,
+        -0.273832,
+        1.550948,
+        0,
+        -0.13145,
+        -1.613219,
+        -0.326878,
+        0,
+        1.56944,
+        -0.221686,
+        0.462942,
+        0,
+        160.814596,
+        4.640474,
+        127.044088,
+        1
+      ],
+      "centre": [
+        176.24,
+        133.56
+      ],
+      "fit": {
+        "sceneToFootprint": 0.6,
+        "yawDeg": 111.7,
+        "metresPerUnit": 1.6512
+      }
+    },
+    {
+      "id": "in-with-the-monkeys",
+      "type": "splat",
+      "url": "assets/splats/in-with-the-monkeys-fit.ply",
+      "anchor": "In with the Monkeys",
+      "replacesBuilding": false,
+      "matrix": [
+        -0.446123,
+        0.001371,
+        -0.441156,
+        0,
+        -0.001577,
+        -0.62741,
+        -0.000355,
+        0,
+        -0.441155,
+        0.000857,
+        0.446125,
+        0,
+        309.55441,
+        1.697477,
+        150.525561,
+        1
+      ],
+      "centre": [
+        262.99,
+        200.77
+      ],
+      "fit": {
+        "sceneToFootprint": 1.038,
+        "yawDeg": -137.2,
+        "metresPerUnit": 0.6274
+      }
+    },
+    {
+      "id": "mongooses",
+      "type": "splat",
+      "url": "assets/splats/mongooses-fit.ply",
+      "anchor": "Mongooses",
+      "replacesBuilding": false,
+      "matrix": [
+        -0.259747,
+        -0.001361,
+        0.032444,
+        0,
+        0.001332,
+        -0.261765,
+        -0.000316,
+        0,
+        0.032446,
+        -0.000148,
+        0.25975,
+        0,
+        40.346801,
+        1.699589,
+        -119.585565,
+        1
+      ],
+      "centre": [
+        40.96,
+        -113.04
+      ],
+      "fit": {
+        "sceneToFootprint": 0.786,
+        "yawDeg": 174.4,
+        "metresPerUnit": 0.2618
+      }
+    },
+    {
+      "id": "into-africa",
+      "type": "splat",
+      "url": "assets/splats/into-africa-fit.ply",
+      "anchor": "Into Africa",
+      "replacesBuilding": false,
+      "matrix": [
+        -3.175601,
+        -0.030437,
+        0.833134,
+        0,
+        0.032882,
+        -3.283043,
+        0.005392,
+        0,
+        0.833041,
+        0.013559,
+        3.175742,
+        0,
+        -213.992694,
+        27.597243,
+        -130.857141,
+        1
+      ],
+      "centre": [
+        -185.21,
+        -62.87
+      ],
+      "fit": {
+        "sceneToFootprint": 0.6,
+        "yawDeg": 156.8,
+        "metresPerUnit": 3.2832
+      }
+    },
+    {
+      "id": "giraffes",
+      "type": "splat",
+      "url": "assets/splats/giraffes-fit.ply",
+      "anchor": "Giraffes",
+      "replacesBuilding": false,
+      "matrix": [
+        3.801376,
+        0.013369,
+        -0.762357,
+        0,
+        0.008172,
+        -3.876986,
+        -0.02724,
+        0,
+        -0.762431,
+        0.025101,
+        -3.801302,
+        0,
+        -141.656726,
+        1.235193,
+        8.348868,
+        1
+      ],
+      "centre": [
+        -165.07,
+        -48.62
+      ],
+      "fit": {
+        "sceneToFootprint": 1.6,
+        "yawDeg": -22.3,
+        "metresPerUnit": 3.8771
+      }
+    },
+    {
+      "id": "monkey-valley",
+      "type": "splat",
+      "url": "assets/splats/monkey-valley-fit.ply",
+      "anchor": "Monkey Valley",
+      "replacesBuilding": false,
+      "matrix": [
+        -0.400219,
+        -0.008948,
+        0.490237,
+        0,
+        0.000346,
+        -0.632819,
+        -0.011268,
+        0,
+        0.490318,
+        -0.006857,
+        0.40016,
+        0,
+        -172.801496,
+        2.694563,
+        -142.950724,
+        1
+      ],
+      "centre": [
+        -156.14,
+        -131.85
+      ],
+      "fit": {
+        "sceneToFootprint": 0.6,
+        "yawDeg": 123.6,
+        "metresPerUnit": 0.6329
+      }
+    },
+    {
+      "id": "macaws",
+      "type": "splat",
+      "url": "assets/splats/macaws-fit.ply",
+      "anchor": "Macaws",
+      "replacesBuilding": false,
+      "matrix": [
+        0.300692,
+        -0.004106,
+        0.55103,
+        0,
+        -0.000176,
+        -0.627731,
+        -0.004582,
+        0,
+        0.551046,
+        0.00204,
+        -0.300685,
+        0,
+        204.387005,
+        7.39369,
+        20.354902,
+        1
+      ],
+      "centre": [
+        221.48,
+        16.4
+      ],
+      "fit": {
+        "sceneToFootprint": 0.6,
+        "yawDeg": 77.0,
+        "metresPerUnit": 0.6277
+      }
+    },
+    {
+      "id": "bactrian-camels",
+      "type": "splat",
+      "url": "assets/splats/bactrian-camels-fit.ply",
+      "anchor": "Bactrian camels",
+      "replacesBuilding": false,
+      "matrix": [
+        -1.350619,
+        -0.065793,
+        -0.73781,
+        0,
+        0.070779,
+        -1.538764,
+        0.00765,
+        0,
+        -0.737348,
+        -0.027194,
+        1.352199,
+        0,
+        40.533384,
+        5.532252,
+        127.615616,
+        1
+      ],
+      "centre": [
+        35.09,
+        144.02
+      ],
+      "fit": {
+        "sceneToFootprint": 0.6,
+        "yawDeg": -161.9,
+        "metresPerUnit": 1.5404
+      }
+    },
+    {
+      "id": "bird-safari",
+      "type": "splat",
+      "url": "assets/splats/bird-safari-fit.ply",
+      "anchor": "Bird Safari",
+      "replacesBuilding": false,
+      "matrix": [
+        6.766163,
+        0.370051,
+        2.766031,
+        0,
+        -0.063285,
+        -7.232229,
+        1.122361,
+        0,
+        2.789957,
+        -1.06149,
+        -6.68268,
+        0,
+        -277.690183,
+        46.574234,
+        733.193795,
+        1
+      ],
+      "centre": [
+        -0.64,
+        31.11
+      ],
+      "fit": {
+        "sceneToFootprint": 0.6,
+        "yawDeg": 21.5,
+        "metresPerUnit": 7.3191
+      }
+    },
+    {
+      "id": "in-with-the-lemurs",
+      "type": "splat",
+      "url": "assets/splats/in-with-the-lemurs-fit.ply",
+      "anchor": "In with the Lemurs",
+      "replacesBuilding": false,
+      "matrix": [
+        -0.129809,
+        -0.002226,
+        0.263761,
+        0,
+        -0.000648,
+        -0.293968,
+        -0.0028,
+        0,
+        0.26377,
+        -0.001817,
+        0.129798,
+        0,
+        -75.525709,
+        3.965491,
+        -102.990093,
+        1
+      ],
+      "centre": [
+        -60.39,
+        -96.96
+      ],
+      "fit": {
+        "sceneToFootprint": 0.6,
+        "yawDeg": 111.7,
+        "metresPerUnit": 0.294
+      }
+    },
+    {
+      "id": "gibbons",
+      "type": "splat",
+      "url": "assets/splats/gibbons-fit.ply",
+      "anchor": "Gibbons",
+      "replacesBuilding": false,
+      "matrix": [
+        -0.984179,
+        0.001299,
+        -0.024426,
+        0,
+        -0.001591,
+        -0.984412,
+        0.011731,
+        0,
+        -0.024409,
+        0.011767,
+        0.98411,
+        0,
+        -21.629455,
+        1.699531,
+        98.314629,
+        1
+      ],
+      "centre": [
+        -24.19,
+        111.06
+      ],
+      "fit": {
+        "sceneToFootprint": 0.647,
+        "yawDeg": -168.8,
+        "metresPerUnit": 0.9845
+      }
+    },
+    {
+      "id": "hanuman-langur",
+      "type": "splat",
+      "url": "assets/splats/hanuman-langur-fit.ply",
+      "anchor": "Hanuman langur",
+      "replacesBuilding": false,
+      "matrix": [
+        0.083882,
+        -0.001202,
+        -0.372382,
+        0,
+        -0.000857,
+        -0.381712,
+        0.00104,
+        0,
+        -0.372382,
+        0.000608,
+        -0.083884,
+        0,
+        207.218072,
+        3.393065,
+        102.914094,
+        1
+      ],
+      "centre": [
+        194.87,
+        98.55
+      ],
+      "fit": {
+        "sceneToFootprint": 0.6,
+        "yawDeg": -70.5,
+        "metresPerUnit": 0.3817
+      }
+    },
+    {
+      "id": "attenborough-komodo-dragon-house",
+      "type": "splat",
+      "url": "assets/splats/attenborough-komodo-dragon-house-fit.ply",
+      "anchor": "Attenborough Komodo Dragon House",
+      "replacesBuilding": false,
+      "matrix": [
+        0.086931,
+        0.010253,
+        0.125228,
+        0,
+        0.019739,
+        -0.151502,
+        -0.001298,
+        0,
+        0.124087,
+        0.016917,
+        -0.087524,
+        0,
+        -66.917289,
+        30.007811,
+        85.007806,
+        1
+      ],
+      "centre": [
+        -53.35,
+        73.67
+      ],
+      "fit": {
+        "sceneToFootprint": 0.6,
+        "yawDeg": 50.1,
+        "metresPerUnit": 0.1528
+      }
+    },
+    {
+      "id": "giants-of-the-gal\u00e1pagos",
+      "type": "splat",
+      "url": "assets/splats/giants-of-the-gal\u00e1pagos-fit.ply",
+      "anchor": "Giants of the Gal\u00e1pagos",
+      "replacesBuilding": true,
+      "matrix": [
+        -0.530012,
+        0.002961,
+        0.262619,
+        0,
+        -0.003533,
+        -0.591504,
+        -0.000462,
+        0,
+        0.262612,
+        -0.001982,
+        0.53002,
+        0,
+        145.753533,
+        1.700074,
+        -5.153531,
+        1
+      ],
+      "centre": [
+        148.8,
+        3.78
+      ],
+      "fit": {
+        "sceneToFootprint": 0.8,
+        "yawDeg": 161.1,
+        "metresPerUnit": 0.5915
+      }
+    },
+    {
+      "id": "coatis",
+      "type": "splat",
+      "url": "assets/splats/coatis-fit.ply",
+      "anchor": "Coatis",
+      "replacesBuilding": false,
+      "matrix": [
+        0.303558,
+        0.003637,
+        -0.009538,
+        0,
+        0.003666,
+        -0.303706,
+        0.000889,
+        0,
+        -0.009526,
+        -0.001004,
+        -0.303578,
+        0,
+        182.947574,
+        4.889145,
+        208.834869,
+        1
+      ],
+      "centre": [
+        185.59,
+        198.98
+      ],
+      "fit": {
+        "sceneToFootprint": 0.6,
+        "yawDeg": 15.1,
+        "metresPerUnit": 0.3037
+      }
+    },
+    {
+      "id": "meerkats",
+      "type": "splat",
+      "url": "assets/splats/meerkats-fit.ply",
+      "anchor": "Meerkats",
+      "replacesBuilding": false,
+      "matrix": [
+        -1.216251,
+        -0.0385,
+        0.448048,
+        0,
+        0.019908,
+        -1.295307,
+        -0.057263,
+        0,
+        0.449258,
+        -0.046831,
+        1.215513,
+        0,
+        126.132533,
+        1.685514,
+        179.59239,
+        1
+      ],
+      "centre": [
+        138.66,
+        195.28
+      ],
+      "fit": {
+        "sceneToFootprint": 0.672,
+        "yawDeg": 141.0,
+        "metresPerUnit": 1.2967
+      }
+    },
+    {
+      "id": "chinese-water-deer",
+      "type": "splat",
+      "url": "assets/splats/chinese-water-deer-fit.ply",
+      "anchor": "Chinese water deer",
+      "replacesBuilding": false,
+      "matrix": [
+        -0.054546,
+        0.03254,
+        0.300009,
+        0,
+        0.009801,
+        -0.304519,
+        0.034811,
+        0,
+        0.301609,
+        0.01578,
+        0.053125,
+        0,
+        83.132,
+        3.170833,
+        -135.770252,
+        1
+      ],
+      "centre": [
+        88.43,
+        -134.44
+      ],
+      "fit": {
+        "sceneToFootprint": 0.6,
+        "yawDeg": 103.8,
+        "metresPerUnit": 0.3067
+      }
+    },
+    {
+      "id": "african-harrier-hawk",
+      "type": "splat",
+      "url": "assets/splats/african-harrier-hawk-fit.ply",
+      "anchor": "African harrier-hawk",
+      "replacesBuilding": false,
+      "matrix": [
+        0.520722,
+        0.018925,
+        0.155254,
+        0,
+        0.019003,
+        -0.543366,
+        0.002498,
+        0,
+        0.155244,
+        0.003033,
+        -0.52106,
+        0,
+        37.543275,
+        2.816902,
+        -42.982697,
+        1
+      ],
+      "centre": [
+        38.21,
+        -55.95
+      ],
+      "fit": {
+        "sceneToFootprint": 0.6,
+        "yawDeg": 3.0,
+        "metresPerUnit": 0.5437
+      }
+    },
+    {
+      "id": "celebes-crested-macaques",
+      "type": "splat",
+      "url": "assets/splats/celebes-crested-macaques-fit.ply",
+      "anchor": "Celebes crested macaques",
+      "replacesBuilding": false,
+      "matrix": [
+        0.10821,
+        -0.014662,
+        0.076061,
+        0,
+        -0.012992,
+        -0.132256,
+        -0.007011,
+        0,
+        0.076364,
+        -0.001725,
+        -0.108973,
+        0,
+        21.477233,
+        2.709348,
+        -30.072792,
+        1
+      ],
+      "centre": [
+        25.22,
+        -36.9
+      ],
+      "fit": {
+        "sceneToFootprint": 0.6,
+        "yawDeg": 28.8,
+        "metresPerUnit": 0.1331
+      }
+    },
+    {
+      "id": "lubetkin-pool",
+      "type": "splat",
+      "url": "assets/splats/lubetkin-pool-fit.ply",
+      "anchor": "Lubetkin Pool",
+      "replacesBuilding": true,
+      "matrix": [
+        -0.225285,
+        0.008122,
+        -0.167549,
+        0,
+        0.014965,
+        -0.278456,
+        -0.03362,
+        0,
+        -0.167077,
+        -0.035892,
+        0.22291,
+        0,
+        133.638721,
+        0.219339,
+        112.138424,
+        1
+      ],
+      "centre": [
+        121.29,
+        141.33
+      ],
+      "fit": {
+        "sceneToFootprint": 1.6,
+        "yawDeg": -157.2,
+        "metresPerUnit": 0.2809
+      }
+    },
+    {
+      "id": "london-zoo-entrance",
+      "type": "splat",
+      "url": "assets/splats/london-zoo-entrance-fit.ply",
+      "anchor": "London Zoo Entrance",
+      "replacesBuilding": true,
+      "matrix": [
+        0.158312,
+        0.145416,
+        -1.247785,
+        0,
+        -0.02035,
+        -1.257192,
+        -0.149094,
+        0,
+        -1.256065,
+        0.038696,
+        -0.154853,
+        0,
+        -32.325283,
+        4.815721,
+        -42.085055,
+        1
+      ],
+      "centre": [
+        -40.1,
+        -40.37
+      ],
+      "fit": {
+        "sceneToFootprint": 0.6,
+        "yawDeg": -103.1,
+        "metresPerUnit": 1.2662
+      }
+    },
+    {
+      "id": "north-pheasantry",
+      "type": "splat",
+      "url": "assets/splats/north-pheasantry-fit.ply",
+      "anchor": "North Pheasantry",
+      "replacesBuilding": true,
+      "matrix": [
+        3.376255,
+        -0.00873,
+        -0.267572,
+        0,
+        -0.011174,
+        -3.386697,
+        -0.030499,
+        0,
+        -0.267481,
+        0.031286,
+        -3.376128,
+        0,
+        -77.940973,
+        1.698988,
+        -120.930703,
+        1
+      ],
+      "centre": [
+        -93.34,
+        -168.54
+      ],
+      "fit": {
+        "sceneToFootprint": 0.825,
+        "yawDeg": -18.0,
+        "metresPerUnit": 3.3869
+      }
+    },
+    {
+      "id": "mappin-pavilion",
+      "type": "splat",
+      "url": "assets/splats/mappin-pavilion-fit.ply",
+      "anchor": "Mappin Pavilion",
+      "replacesBuilding": true,
+      "matrix": [
+        0.031091,
+        0.001,
+        -0.096925,
+        0,
+        0.000174,
+        -0.101789,
+        -0.000994,
+        0,
+        -0.09693,
+        0.000138,
+        -0.031091,
+        0,
+        -82.823511,
+        1.92953,
+        74.263702,
+        1
+      ],
+      "centre": [
+        -91.24,
+        72.49
+      ],
+      "fit": {
+        "sceneToFootprint": 0.6,
+        "yawDeg": -78.4,
+        "metresPerUnit": 0.1018
+      }
+    },
+    {
+      "id": "blackburn-pavilion",
+      "type": "splat",
+      "url": "assets/splats/blackburn-pavilion-fit.ply",
+      "anchor": "Blackburn Pavilion",
+      "replacesBuilding": true,
+      "matrix": [
+        0.853231,
+        0.000307,
+        0.277849,
+        0,
+        -3.9e-05,
+        -0.897331,
+        0.00111,
+        0,
+        0.277849,
+        -0.001067,
+        -0.85323,
+        0,
+        213.320859,
+        10.591284,
+        209.904559,
+        1
+      ],
+      "centre": [
+        223.33,
+        180.53
+      ],
+      "fit": {
+        "sceneToFootprint": 0.6,
+        "yawDeg": 18.9,
+        "metresPerUnit": 0.8973
+      }
+    },
+    {
+      "id": "amreli-street-food",
+      "type": "splat",
+      "url": "assets/splats/amreli-street-food-fit.ply",
+      "anchor": "Amreli Street Food",
+      "replacesBuilding": true,
+      "matrix": [
+        0.301449,
+        0.01249,
+        0.520126,
+        0,
+        0.004268,
+        -0.601163,
+        0.011962,
+        0,
+        0.520258,
+        -0.002305,
+        -0.30147,
+        0,
+        209.143552,
+        1.706591,
+        84.343491,
+        1
+      ],
+      "centre": [
+        213.3,
+        79.96
+      ],
+      "fit": {
+        "sceneToFootprint": 0.7,
+        "yawDeg": 42.8,
+        "metresPerUnit": 0.6013
+      }
+    },
+    {
+      "id": "casson-pavilion",
+      "type": "splat",
+      "url": "assets/splats/casson-pavilion-fit.ply",
+      "anchor": "Casson Pavilion",
+      "replacesBuilding": true,
+      "matrix": [
+        15.259033,
+        0.238877,
+        -2.425324,
+        0,
+        0.216124,
+        -15.450061,
+        -0.16197,
+        0,
+        -2.427457,
+        0.126021,
+        -15.260043,
+        0,
+        66.771536,
+        1.072665,
+        109.467717,
+        1
+      ],
+      "centre": [
+        42.95,
+        80.71
+      ],
+      "fit": {
+        "sceneToFootprint": 1.6,
+        "yawDeg": -47.9,
+        "metresPerUnit": 15.4524
+      }
+    },
+    {
+      "id": "golden-headed-lion-tamarin",
+      "type": "splat",
+      "url": "assets/splats/golden-headed-lion-tamarin-fit.ply",
+      "anchor": "Golden-headed lion tamarin",
+      "replacesBuilding": false,
+      "matrix": [
+        -0.852489,
+        0.01939,
+        0.200135,
+        0,
+        0.017004,
+        -0.861724,
+        0.155916,
+        0,
+        0.200352,
+        0.155637,
+        0.838334,
+        0,
+        -6.606649,
+        0.435503,
+        -135.674865,
+        1
+      ],
+      "centre": [
+        -0.48,
+        -117.17
+      ],
+      "fit": {
+        "sceneToFootprint": 1.6,
+        "yawDeg": 161.1,
+        "metresPerUnit": 0.8759
+      }
+    },
+    {
+      "id": "okapis",
+      "type": "splat",
+      "url": "assets/splats/okapis-fit.ply",
+      "anchor": "Okapis",
+      "replacesBuilding": false,
+      "matrix": [
+        1.032606,
+        -0.011173,
+        -0.386698,
+        0,
+        -0.009926,
+        -1.102637,
+        0.005353,
+        0,
+        -0.386732,
+        -0.001532,
+        -1.032653,
+        0,
+        -229.171686,
+        2.892373,
+        12.170951,
+        1
+      ],
+      "centre": [
+        -239.51,
+        -15.14
+      ],
+      "fit": {
+        "sceneToFootprint": 0.6,
+        "yawDeg": -21.0,
+        "metresPerUnit": 1.1027
+      }
+    },
+    {
+      "id": "otters",
+      "type": "splat",
+      "url": "assets/splats/otters-fit.ply",
+      "anchor": "Otters",
+      "replacesBuilding": false,
+      "matrix": [
+        -0.81203,
+        -0.002483,
+        0.766178,
+        0,
+        -0.000191,
+        -1.116429,
+        -0.00382,
+        0,
+        0.766182,
+        -0.00291,
+        0.812025,
+        0,
+        50.332214,
+        0.692239,
+        -149.351284,
+        1
+      ],
+      "centre": [
+        64.85,
+        -124.67
+      ],
+      "fit": {
+        "sceneToFootprint": 1.6,
+        "yawDeg": 149.4,
+        "metresPerUnit": 1.1164
+      }
+    },
+    {
+      "id": "penguin-beach",
+      "type": "splat",
+      "url": "assets/splats/penguin-beach-fit.ply",
+      "anchor": "Penguin Beach",
+      "replacesBuilding": false,
+      "matrix": [
+        0.162951,
+        0.055728,
+        0.990656,
+        0,
+        0.058799,
+        -1.002704,
+        0.046734,
+        0,
+        0.990478,
+        0.050356,
+        -0.165755,
+        0,
+        171.098369,
+        6.942393,
+        -42.413465,
+        1
+      ],
+      "centre": [
+        186.93,
+        -40.95
+      ],
+      "fit": {
+        "sceneToFootprint": 0.6,
+        "yawDeg": 95.2,
+        "metresPerUnit": 1.0055
+      }
+    },
+    {
+      "id": "pygmy-hippos",
+      "type": "splat",
+      "url": "assets/splats/pygmy-hippos-fit.ply",
+      "anchor": "Pygmy hippos",
+      "replacesBuilding": false,
+      "matrix": [
+        0.695067,
+        0.031314,
+        -0.377843,
+        0,
+        0.028543,
+        -0.791125,
+        -0.013058,
+        0,
+        -0.378062,
+        -0.002158,
+        -0.69565,
+        0,
+        -109.892819,
+        4.180409,
+        -50.940799,
+        1
+      ],
+      "centre": [
+        -116.76,
+        -67.38
+      ],
+      "fit": {
+        "sceneToFootprint": 0.6,
+        "yawDeg": -22.7,
+        "metresPerUnit": 0.7917
+      }
+    },
+    {
+      "id": "rainforest-life",
+      "type": "splat",
+      "url": "assets/splats/rainforest-life-fit.ply",
+      "anchor": "Rainforest Life",
+      "replacesBuilding": false,
+      "matrix": [
+        -1.919705,
+        0.050179,
+        0.681757,
+        0,
+        -0.035264,
+        -2.036853,
+        0.050619,
+        0,
+        0.682691,
+        0.035888,
+        1.919693,
+        0,
+        -25.356927,
+        5.558109,
+        -134.091868,
+        1
+      ],
+      "centre": [
+        -11.42,
+        -110.49
+      ],
+      "fit": {
+        "sceneToFootprint": 0.6,
+        "yawDeg": 149.5,
+        "metresPerUnit": 2.0378
+      }
+    },
+    {
+      "id": "red-river-hogs",
+      "type": "splat",
+      "url": "assets/splats/red-river-hogs-fit.ply",
+      "anchor": "Red river hogs",
+      "replacesBuilding": false,
+      "matrix": [
+        -2.180363,
+        -0.010291,
+        -1.564714,
+        0,
+        0.033837,
+        -2.683356,
+        -0.029502,
+        0,
+        -1.564381,
+        -0.043697,
+        2.180188,
+        0,
+        85.963267,
+        1.074671,
+        -4.663828,
+        1
+      ],
+      "centre": [
+        54.65,
+        59.9
+      ],
+      "fit": {
+        "sceneToFootprint": 1.6,
+        "yawDeg": -154.4,
+        "metresPerUnit": 2.6837
+      }
+    },
+    {
+      "id": "red-titi-monkeys",
+      "type": "splat",
+      "url": "assets/splats/red-titi-monkeys-fit.ply",
+      "anchor": "Red titi Monkeys",
+      "replacesBuilding": false,
+      "matrix": [
+        -0.188891,
+        0.011937,
+        -0.294793,
+        0,
+        -0.011055,
+        -0.350075,
+        -0.007093,
+        0,
+        -0.294827,
+        0.005478,
+        0.189135,
+        0,
+        37.347778,
+        1.700242,
+        -132.959976,
+        1
+      ],
+      "centre": [
+        27.81,
+        -123.64
+      ],
+      "fit": {
+        "sceneToFootprint": 1.074,
+        "yawDeg": -134.3,
+        "metresPerUnit": 0.3503
+      }
+    },
+    {
+      "id": "reptile-house",
+      "type": "splat",
+      "url": "assets/splats/reptile-house-fit.ply",
+      "anchor": "Reptile House",
+      "replacesBuilding": false,
+      "matrix": [
+        -0.901001,
+        0.003287,
+        2.548472,
+        0,
+        -0.017746,
+        -2.702999,
+        -0.002787,
+        0,
+        2.548413,
+        -0.01766,
+        0.901002,
+        0,
+        -90.4248,
+        11.74439,
+        16.198163,
+        1
+      ],
+      "centre": [
+        -45.66,
+        32.6
+      ],
+      "fit": {
+        "sceneToFootprint": 0.6,
+        "yawDeg": 109.9,
+        "metresPerUnit": 2.7031
+      }
+    },
+    {
+      "id": "the-beach-hut",
+      "type": "splat",
+      "url": "assets/splats/the-beach-hut-fit.ply",
+      "anchor": "The Beach Hut",
+      "replacesBuilding": true,
+      "matrix": [
+        -0.19437,
+        0.00291,
+        -1.173279,
+        0,
+        0.008787,
+        -1.189233,
+        -0.004405,
+        0,
+        -1.17325,
+        -0.009388,
+        0.194342,
+        0,
+        180.649452,
+        1.58876,
+        -41.65624,
+        1
+      ],
+      "centre": [
+        169.54,
+        -42.66
+      ],
+      "fit": {
+        "sceneToFootprint": 1.6,
+        "yawDeg": -84.8,
+        "metresPerUnit": 1.1893
+      }
+    },
+    {
+      "id": "the-farmyard",
+      "type": "splat",
+      "url": "assets/splats/the-farmyard-fit.ply",
+      "anchor": "The Farmyard",
+      "replacesBuilding": false,
+      "matrix": [
+        0.741538,
+        0.01318,
+        0.59547,
+        0,
+        -0.078161,
+        -0.940515,
+        0.118151,
+        0,
+        0.590465,
+        -0.14105,
+        -0.732183,
+        0,
+        78.110074,
+        2.862801,
+        147.552009,
+        1
+      ],
+      "centre": [
+        86.94,
+        139.68
+      ],
+      "fit": {
+        "sceneToFootprint": 0.6,
+        "yawDeg": 48.3,
+        "metresPerUnit": 0.9511
+      }
+    },
+    {
+      "id": "the-giraffe-house",
+      "type": "splat",
+      "url": "assets/splats/the-giraffe-house-fit.ply",
+      "anchor": "The Giraffe House",
+      "replacesBuilding": true,
+      "matrix": [
+        -0.809401,
+        0.046691,
+        0.411128,
+        0,
+        -0.039284,
+        -0.907816,
+        0.025758,
+        0,
+        0.411902,
+        0.005168,
+        0.810338,
+        0,
+        -196.074716,
+        2.56953,
+        -73.712642,
+        1
+      ],
+      "centre": [
+        -188.71,
+        -56.51
+      ],
+      "fit": {
+        "sceneToFootprint": 0.6,
+        "yawDeg": 156.8,
+        "metresPerUnit": 0.909
+      }
+    },
+    {
+      "id": "the-secret-life-of-reptiles-and-amphibians-slora",
+      "type": "splat",
+      "url": "assets/splats/the-secret-life-of-reptiles-and-amphibians-slora-fit.ply",
+      "anchor": "The Secret Life of Reptiles and Amphibians (SLoRA)",
+      "replacesBuilding": true,
+      "matrix": [
+        -1.10027,
+        0.407263,
+        1.026939,
+        0,
+        -0.620786,
+        -1.426825,
+        -0.099266,
+        0,
+        0.913833,
+        -0.478922,
+        1.169018,
+        0,
+        79.589557,
+        2.310648,
+        -13.097437,
+        1
+      ],
+      "centre": [
+        92.08,
+        -7.2
+      ],
+      "fit": {
+        "sceneToFootprint": 0.6,
+        "yawDeg": 115.1,
+        "metresPerUnit": 1.5592
+      }
+    },
+    {
+      "id": "the-stork-and-ostrich-house",
+      "type": "splat",
+      "url": "assets/splats/the-stork-and-ostrich-house-fit.ply",
+      "anchor": "The Stork and Ostrich House",
+      "replacesBuilding": true,
+      "matrix": [
+        -1.114138,
+        0.008514,
+        -0.441396,
+        0,
+        -0.007188,
+        -1.198387,
+        -0.004972,
+        0,
+        -0.44142,
+        -0.001975,
+        1.11416,
+        0,
+        4.713556,
+        8.969155,
+        17.256918,
+        1
+      ],
+      "centre": [
+        -7.94,
+        44.6
+      ],
+      "fit": {
+        "sceneToFootprint": 0.6,
+        "yawDeg": -155.1,
+        "metresPerUnit": 1.1984
+      }
+    },
+    {
+      "id": "the-terrace",
+      "type": "splat",
+      "url": "assets/splats/the-terrace-fit.ply",
+      "anchor": "The Terrace",
+      "replacesBuilding": true,
+      "matrix": [
+        -0.000626,
+        0.004898,
+        -1.953432,
+        0,
+        -0.117783,
+        -1.949878,
+        -0.004851,
+        0,
+        -1.949884,
+        0.117781,
+        0.000921,
+        0,
+        138.408257,
+        3.391239,
+        -83.405725,
+        1
+      ],
+      "centre": [
+        109.73,
+        -87.58
+      ],
+      "fit": {
+        "sceneToFootprint": 0.6,
+        "yawDeg": -81.8,
+        "metresPerUnit": 1.9534
+      }
+    },
+    {
+      "id": "tiger-territory",
+      "type": "splat",
+      "url": "assets/splats/tiger-territory-fit.ply",
+      "anchor": "Tiger Territory",
+      "replacesBuilding": false,
+      "matrix": [
+        2.302036,
+        0.047449,
+        0.720422,
+        0,
+        0.039626,
+        -2.412057,
+        0.032246,
+        0,
+        0.720895,
+        -0.018936,
+        -2.302299,
+        0,
+        -15.172135,
+        1.701579,
+        147.386567,
+        1
+      ],
+      "centre": [
+        -4.54,
+        94.51
+      ],
+      "fit": {
+        "sceneToFootprint": 1.215,
+        "yawDeg": 11.2,
+        "metresPerUnit": 2.4126
+      }
+    },
+    {
+      "id": "tiny-giants",
+      "type": "splat",
+      "url": "assets/splats/tiny-giants-fit.ply",
+      "anchor": "Tiny Giants",
+      "replacesBuilding": false,
+      "matrix": [
+        -2.141667,
+        0.058095,
+        0.124918,
+        0,
+        -0.053958,
+        -2.144203,
+        0.072104,
+        0,
+        0.12676,
+        0.068814,
+        2.141241,
+        0,
+        254.693448,
+        33.09762,
+        120.601586,
+        1
+      ],
+      "centre": [
+        227.8,
+        137.16
+      ],
+      "fit": {
+        "sceneToFootprint": 0.6,
+        "yawDeg": -121.6,
+        "metresPerUnit": 2.1461
+      }
+    },
+    {
+      "id": "warthogs",
+      "type": "splat",
+      "url": "assets/splats/warthogs-fit.ply",
+      "anchor": "Warthogs",
+      "replacesBuilding": false,
+      "matrix": [
+        4.840084,
+        -0.06506,
+        -1.604724,
+        0,
+        -0.055584,
+        -5.099134,
+        0.039084,
+        0,
+        -1.60508,
+        -0.019604,
+        -4.840363,
+        0,
+        -132.84127,
+        16.025975,
+        89.106766,
+        1
+      ],
+      "centre": [
+        -199.88,
+        -67.41
+      ],
+      "fit": {
+        "sceneToFootprint": 0.6,
+        "yawDeg": -23.2,
+        "metresPerUnit": 5.0996
+      }
+    },
+    {
+      "id": "zebras",
+      "type": "splat",
+      "url": "assets/splats/zebras-fit.ply",
+      "anchor": "Zebras",
+      "replacesBuilding": false,
+      "matrix": [
+        0.39327,
+        -0.080286,
+        0.5842,
+        0,
+        -0.050463,
+        -0.704205,
+        -0.062808,
+        0,
+        0.587527,
+        -0.006744,
+        -0.396437,
+        0,
+        -223.670752,
+        1.699074,
+        -21.037343,
+        1
+      ],
+      "centre": [
+        -205.21,
+        -35.37
+      ],
+      "fit": {
+        "sceneToFootprint": 1.198,
+        "yawDeg": 51.8,
+        "metresPerUnit": 0.7088
+      }
+    },
+    {
+      "id": "zoo-shop",
+      "type": "splat",
+      "url": "assets/splats/zoo-shop-fit.ply",
+      "anchor": "Zoo Shop",
+      "replacesBuilding": true,
+      "matrix": [
+        1.047607,
+        0.02451,
+        0.458425,
+        0,
+        0.018839,
+        -1.143483,
+        0.018085,
+        0,
+        0.458693,
+        -0.009014,
+        -1.047738,
+        0,
+        145.695234,
+        2.497527,
+        -72.940549,
+        1
+      ],
+      "centre": [
+        155.36,
+        -86.86
+      ],
+      "fit": {
+        "sceneToFootprint": 0.6,
+        "yawDeg": 34.8,
+        "metresPerUnit": 1.1438
+      }
+    },
+    {
+      "id": "zoological-society-of-london-main-building",
+      "type": "splat",
+      "url": "assets/splats/zoological-society-of-london-main-building-fit.ply",
+      "anchor": "Zoological Society of London, Main Building",
+      "replacesBuilding": true,
+      "matrix": [
+        -0.552543,
+        0.03809,
+        -1.382248,
+        0,
+        0.006494,
+        -1.488429,
+        -0.043612,
+        0,
+        -1.382757,
+        -0.022211,
+        0.552134,
+        0,
+        192.815781,
+        7.146604,
+        -171.159088,
+        1
+      ],
+      "centre": [
+        164.83,
+        -162.59
+      ],
+      "fit": {
+        "sceneToFootprint": 0.6,
+        "yawDeg": -107.2,
+        "metresPerUnit": 1.4891
+      }
+    },
+    {
+      "id": "diana-monkeys",
+      "type": "splat",
+      "url": "assets/splats/diana-monkeys-fit.ply",
+      "anchor": "Diana monkeys",
+      "replacesBuilding": false,
+      "matrix": [
+        -0.123248,
+        0.005554,
+        -0.08318,
+        0,
+        -0.009478,
+        -0.148435,
+        0.004132,
+        0,
+        -0.082824,
+        0.008721,
+        0.123304,
+        0,
+        54.93277,
+        18.664872,
+        -38.299772,
+        1
+      ],
+      "centre": [
+        50.3,
+        -32.21
+      ],
+      "fit": {
+        "sceneToFootprint": 0.6,
+        "yawDeg": -142.8,
+        "metresPerUnit": 0.1488
+      }
+    },
+    {
+      "id": "fruit-bats",
+      "type": "splat",
+      "url": "assets/splats/fruit-bats-fit.ply",
+      "anchor": "Fruit bats",
+      "replacesBuilding": false,
+      "matrix": [
+        0.46701,
+        0.020481,
+        -0.474201,
+        0,
+        -0.036479,
+        -0.661734,
+        -0.064506,
+        0,
+        -0.473239,
+        0.07122,
+        -0.462987,
+        0,
+        55.702355,
+        3.399733,
+        -125.065822,
+        1
+      ],
+      "centre": [
+        49.35,
+        -135.84
+      ],
+      "fit": {
+        "sceneToFootprint": 0.6,
+        "yawDeg": -30.6,
+        "metresPerUnit": 0.6659
+      }
+    },
+    {
+      "id": "mangabeys",
+      "type": "splat",
+      "url": "assets/splats/mangabeys-fit.ply",
+      "anchor": "Mangabeys",
+      "replacesBuilding": false,
+      "matrix": [
+        0.389745,
+        -0.021263,
+        -1.250196,
+        0,
+        -0.04566,
+        -1.30889,
+        0.008026,
+        0,
+        -1.249542,
+        0.041196,
+        -0.390242,
+        0,
+        82.589875,
+        1.704873,
+        11.976086,
+        1
+      ],
+      "centre": [
+        55.26,
+        1.6
+      ],
+      "fit": {
+        "sceneToFootprint": 1.076,
+        "yawDeg": -69.2,
+        "metresPerUnit": 1.3097
+      }
+    }
+  ]
+}

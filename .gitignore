@@ -1,0 +1,10 @@
+node_modules/
+dist/
+work/
+.tools/
+# Brush GPU autotune cache (keep locally: fewer re-tunes, fewer crashes)
+target/
+# Raw splats straight from training; the simulation only loads the fitted *-fit.ply files
+public/assets/splats/*.ply
+!public/assets/splats/*-fit.ply
+__pycache__/
